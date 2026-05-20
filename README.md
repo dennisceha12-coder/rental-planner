@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rental Planner
 
-## Getting Started
+Kleinschalige verhuurplanning: klussen, materiaal, personeelsplanning, offertes en callsheets.
 
-First, run the development server:
+## Lokaal draaien
 
 ```bash
+npm install
+npx prisma migrate dev
+npm run db:seed   # optioneel — demo-data
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Eerste stappen
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Bedrijf** (`/settings`) — vul leveranciergegevens in (KvK, BTW, IBAN) voor offertes
+2. **Catalogus** — materiaal met dagtarieven
+3. **Team** — teamleden voor personeelsplanning
+4. **Nieuwe klus** — materiaal, personeel, transport → documenten printen
 
-## Learn More
+## Deploy op Railway
 
-To learn more about Next.js, take a look at the following resources:
+SQLite vereist persistent storage. Gebruik Railway (niet Vercel serverless).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Maak project op [railway.app](https://railway.app) en koppel deze GitHub-repo
+2. Voeg een **Volume** toe, mount op `/data`
+3. Environment variable: `DATABASE_URL=file:/data/dev.db`
+4. Deploy (Dockerfile wordt automatisch gebruikt via `railway.toml`)
+5. Optioneel na eerste deploy: Railway shell → `npm run db:seed`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Documenten per klus
 
-## Deploy on Vercel
+| Document | Route |
+|----------|--------|
+| Offerte | `/print/[id]/offerte` |
+| Callsheet | `/print/[id]/callsheet` |
+| Personeelsplanning | `/print/[id]/personeel` |
+| Materiaallijst | `/print/[id]/materiaallijst` |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Print via Ctrl+P / Cmd+P → PDF.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tech stack
+
+Next.js 16, React 19, Prisma 7, SQLite (better-sqlite3), Tailwind v4.

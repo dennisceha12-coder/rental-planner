@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { listProjects } from '@/lib/project-queries';
 import StatusBadge from '@/components/StatusBadge';
 import { STATUS_LABELS } from '@/lib/validators';
-import { projectMaterialTotal, formatEur } from '@/lib/pricing';
+import { computeProjectTotals, projectToCostFields } from '@/lib/project-totals';
+import { formatEur } from '@/lib/pricing';
 import type { ProjectStatus } from '@/generated/prisma/client';
 
 export default async function HomePage({
@@ -48,7 +49,8 @@ export default async function HomePage({
       ) : (
         <ul className="divide-y divide-zinc-200 overflow-hidden rounded-lg border border-zinc-200 bg-white">
           {projects.map((p) => {
-            const total = projectMaterialTotal(p.lines);
+            const totals = computeProjectTotals(p.lines, projectToCostFields(p));
+            const hasTotal = totals.grandTotal > 0;
             return (
               <li key={p.id}>
                 <Link
@@ -67,7 +69,7 @@ export default async function HomePage({
                     </p>
                   </div>
                   <span className="text-sm font-medium tabular-nums text-zinc-700">
-                    {p.lines.length > 0 ? formatEur(total) : '—'}
+                    {hasTotal ? formatEur(totals.grandTotal) : '—'}
                   </span>
                 </Link>
               </li>

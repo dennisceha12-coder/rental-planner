@@ -4,6 +4,9 @@ import { useTransition } from 'react';
 import { createProject, updateProject } from '@/app/actions';
 import { STATUS_LABELS } from '@/lib/validators';
 import { toDateInputValue } from '@/lib/dates';
+import {
+  DEFAULT_TRANSPORT_RATE_PER_KM,
+} from '@/lib/constants';
 import type { Project, Client, ProjectStatus } from '@/generated/prisma/client';
 
 type ProjectWithClient = Project & { client: Client };
@@ -169,6 +172,39 @@ export default function ProjectForm({
             className="rounded border border-zinc-300 px-3 py-2"
           />
         </label>
+
+        <div className="sm:col-span-2 mt-2 border-t border-zinc-200 pt-4">
+          <h3 className="mb-3 text-sm font-semibold text-zinc-900">Transport (offerte)</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-1 text-sm">
+              Afstand (km)
+              <input
+                name="transportKm"
+                type="number"
+                step="1"
+                min="0"
+                placeholder="bijv. 85"
+                defaultValue={project?.transportKm ?? ''}
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              Vergoeding (EUR per km)
+              <input
+                name="transportRatePerKm"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder={String(DEFAULT_TRANSPORT_RATE_PER_KM)}
+                defaultValue={project?.transportRatePerKm ?? ''}
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </div>
+          <p className="mt-2 text-xs text-zinc-500">
+            Personeelsplanning stel je in op het tabblad <strong>Personeel</strong>.
+          </p>
+        </div>
 
         <label className="grid gap-1 text-sm sm:col-span-2">
           Contact op locatie

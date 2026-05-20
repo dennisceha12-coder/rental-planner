@@ -14,6 +14,26 @@ enum ProjectStatus {
   AFGEROND
 }
 
+enum CrewPhase {
+  OPBOUW
+  SHOW
+  AFBOUW
+}
+
+model CompanySettings {
+  id                String @id @default("default")
+  companyName       String @default("")
+  address           String @default("")
+  email             String?
+  phone             String?
+  kvkNumber         String?
+  vatNumber         String?
+  iban              String?
+  quoteValidityDays Int    @default(30)
+  defaultVatRate    Float  @default(21)
+  paymentTerms      String?
+}
+
 model Client {
   id        String    @id @default(cuid())
   name      String
@@ -43,9 +63,49 @@ model Project {
   siteContact  String?
   parkingNotes String?
   notes        String?
+  hourlyRate       Float?
+  transportKm      Float?
+  transportRatePerKm Float?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   lines        ProjectLine[]
+  crewShifts   CrewShift[]
+}
+
+model CrewShift {
+  id         String           @id @default(cuid())
+  projectId  String
+  project    Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase      CrewPhase
+  role       String?
+  headcount  Int
+  date       DateTime
+  startTime  String
+  endTime    String
+  hourlyRate Float?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  staffAssignments CrewShiftStaff[]
+}
+
+model Staff {
+  id        String           @id @default(cuid())
+  name      String
+  role      String?
+  phone     String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  crewAssignments CrewShiftStaff[]
+}
+
+model CrewShiftStaff {
+  id      String    @id @default(cuid())
+  shiftId String
+  shift   CrewShift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  staffId String
+  staff   Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([shiftId, staffId])
 }
 
 model Equipment {

@@ -8,10 +8,31 @@ const adapter = new PrismaBetterSqlite3({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  await prisma.crewShiftStaff.deleteMany();
+  await prisma.crewShift.deleteMany();
   await prisma.projectLine.deleteMany();
   await prisma.project.deleteMany();
   await prisma.client.deleteMany();
   await prisma.equipment.deleteMany();
+  await prisma.staff.deleteMany();
+
+  await prisma.companySettings.upsert({
+    where: { id: 'default' },
+    create: {
+      id: 'default',
+      companyName: 'Radius AV Verhuur',
+      address: 'Industrieweg 12\n6211 AA Maastricht',
+      email: 'info@radiusav.nl',
+      phone: '043-1234567',
+      kvkNumber: '12345678',
+      vatNumber: 'NL123456789B01',
+      iban: 'NL00BANK0123456789',
+      quoteValidityDays: 30,
+      defaultVatRate: 21,
+      paymentTerms: '14 dagen na factuurdatum',
+    },
+    update: {},
+  });
 
   const client = await prisma.client.create({
     data: {
@@ -19,9 +40,13 @@ async function main() {
       email: 'info@demoevents.nl',
       phone: '06-12345678',
       address: 'Voorbeeldstraat 1, Maastricht',
-      vatNumber: 'NL123456789B01',
+      vatNumber: 'NL987654321B01',
     },
   });
+
+  const tech1 = await prisma.staff.create({ data: { name: 'Jan Jansen', role: 'Technicus' } });
+  const tech2 = await prisma.staff.create({ data: { name: 'Piet Pietersen', role: 'Technicus' } });
+  const tech3 = await prisma.staff.create({ data: { name: 'Kees de Vries', role: 'Rigger' } });
 
   const pa = await prisma.equipment.create({
     data: { name: 'PA-systeem compact', category: 'Geluid', dailyRate: 150, stockQty: 3 },
@@ -53,7 +78,43 @@ async function main() {
       siteContact: 'Jan de Planner — 06-98765432',
       parkingNotes: 'Levering via backstage-ingang',
       notes: 'Stroom 32A beschikbaar bij podium',
+      hourlyRate: 45,
+      transportKm: 85,
+      transportRatePerKm: 0.65,
     },
+  });
+
+  const setupShift = await prisma.crewShift.create({
+    data: {
+      projectId: project.id,
+      phase: 'OPBOUW',
+      role: 'Technici',
+      headcount: 3,
+      date: loadIn,
+      startTime: '08:00',
+      endTime: '14:00',
+    },
+  });
+  const teardownShift = await prisma.crewShift.create({
+    data: {
+      projectId: project.id,
+      phase: 'AFBOUW',
+      role: 'Technici',
+      headcount: 2,
+      date: loadOut,
+      startTime: '10:00',
+      endTime: '16:00',
+    },
+  });
+
+  await prisma.crewShiftStaff.createMany({
+    data: [
+      { shiftId: setupShift.id, staffId: tech1.id },
+      { shiftId: setupShift.id, staffId: tech2.id },
+      { shiftId: setupShift.id, staffId: tech3.id },
+      { shiftId: teardownShift.id, staffId: tech1.id },
+      { shiftId: teardownShift.id, staffId: tech2.id },
+    ],
   });
 
   await prisma.projectLine.createMany({

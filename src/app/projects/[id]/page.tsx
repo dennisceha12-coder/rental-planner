@@ -8,6 +8,10 @@ import ProjectForm from '@/components/ProjectForm';
 import ProjectLinesSection from '@/components/ProjectLinesSection';
 import PrintActions from '@/components/PrintActions';
 import ProjectExportButton from '@/components/ProjectExportButton';
+import ProjectCostSummary from '@/components/ProjectCostSummary';
+import CrewPlanningSection from '@/components/CrewPlanningSection';
+import { projectToCostFields } from '@/lib/project-totals';
+import { mapCrewShiftFromDb } from '@/lib/crew';
 import DeleteProjectButton from '@/components/DeleteProjectButton';
 
 export default async function ProjectPage({
@@ -22,17 +26,21 @@ export default async function ProjectPage({
   const project = await getProjectById(id);
   if (!project) notFound();
 
-  const [clients, equipment] = await Promise.all([
+  const [clients, equipment, staffList] = await Promise.all([
     prisma.client.findMany({ orderBy: { name: 'asc' } }),
     prisma.equipment.findMany({ orderBy: { name: 'asc' } }),
+    prisma.staff.findMany({ orderBy: { name: 'asc' } }),
   ]);
 
-  const activeTab = tab === 'materiaal' || tab === 'documenten' ? tab : 'algemeen';
+  const activeTab =
+    tab === 'materiaal' || tab === 'personeel' || tab === 'documenten' ? tab : 'algemeen';
   const defaultStart = toDateInputValue(project.loadIn ?? project.showDate);
   const defaultEnd = toDateInputValue(project.loadOut ?? project.showDate);
+  const defaultCrewDate = toDateInputValue(project.loadIn ?? project.showDate);
 
   const tabs = [
     { key: 'algemeen', label: 'Algemeen' },
+    { key: 'personeel', label: 'Personeel' },
     { key: 'materiaal', label: 'Materiaal' },
     { key: 'documenten', label: 'Documenten' },
   ] as const;
@@ -56,6 +64,11 @@ export default async function ProjectPage({
         <ProjectExportButton projectId={project.id} title={project.title} />
       </div>
 
+      <ProjectCostSummary
+        lines={project.lines}
+        costs={projectToCostFields(project)}
+      />
+
       <div className="flex gap-1 border-b border-zinc-200">
         {tabs.map((t) => (
           <Link
@@ -77,6 +90,21 @@ export default async function ProjectPage({
           <ProjectForm clients={clients} project={project} />
           <DeleteProjectButton id={project.id} />
         </div>
+      )}
+
+      {activeTab === 'personeel' && (
+        <CrewPlanningSection
+          projectId={project.id}
+          shifts={project.crewShifts.map((s) => ({
+            ...mapCrewShiftFromDb(s),
+            assignedStaffIds: s.staffAssignments.map((a) => a.staffId),
+          }))}
+          staff={staffList}
+          defaultHourlyRate={project.hourlyRate}
+          defaultDate={defaultCrewDate}
+          defaultStartTime={project.loadInTime ?? '08:00'}
+          defaultEndTime={project.loadOutTime ?? '17:00'}
+        />
       )}
 
       {activeTab === 'materiaal' && (

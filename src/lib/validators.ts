@@ -1,5 +1,15 @@
 import { z } from 'zod';
 
+const optionalNonNegativeNumber = z
+  .union([z.string(), z.number()])
+  .optional()
+  .transform((v) => {
+    if (v === '' || v === undefined || v === null) return null;
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0) return null;
+    return n;
+  });
+
 export const projectStatusSchema = z.enum([
   'CONCEPT',
   'OFFERTE',
@@ -41,7 +51,53 @@ export const projectSchema = z.object({
   siteContact: z.string().optional(),
   parkingNotes: z.string().optional(),
   notes: z.string().optional(),
+  hourlyRate: optionalNonNegativeNumber,
+  transportKm: optionalNonNegativeNumber,
+  transportRatePerKm: optionalNonNegativeNumber,
 });
+
+export const crewPhaseSchema = z.enum(['OPBOUW', 'SHOW', 'AFBOUW']);
+
+export const crewShiftSchema = z.object({
+  projectId: z.string().min(1),
+  phase: crewPhaseSchema,
+  role: z.string().optional(),
+  headcount: z.coerce.number().int().positive('Minimaal 1 persoon'),
+  date: z.string().min(1, 'Datum is verplicht'),
+  startTime: z.string().regex(/^\d{1,2}:\d{2}$/, 'Formaat HH:MM'),
+  endTime: z.string().regex(/^\d{1,2}:\d{2}$/, 'Formaat HH:MM'),
+  hourlyRate: optionalNonNegativeNumber,
+  staffIds: z.string().optional(),
+});
+
+export const companySettingsSchema = z.object({
+  companyName: z.string().min(1, 'Bedrijfsnaam is verplicht'),
+  address: z.string().min(1, 'Adres is verplicht'),
+  email: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() !== '' ? v.trim() : undefined))
+    .pipe(z.union([z.string().email(), z.undefined()])),
+  phone: z.string().optional(),
+  kvkNumber: z.string().optional(),
+  vatNumber: z.string().optional(),
+  iban: z.string().optional(),
+  quoteValidityDays: z.coerce.number().int().min(1).max(365),
+  defaultVatRate: z.coerce.number().min(0).max(100),
+  paymentTerms: z.string().optional(),
+});
+
+export const staffSchema = z.object({
+  name: z.string().min(1, 'Naam is verplicht'),
+  role: z.string().optional(),
+  phone: z.string().optional(),
+});
+
+export const CREW_PHASE_LABELS: Record<z.infer<typeof crewPhaseSchema>, string> = {
+  OPBOUW: 'Opbouw',
+  SHOW: 'Show',
+  AFBOUW: 'Afbouw',
+};
 
 export const projectLineSchema = z.object({
   projectId: z.string().min(1),

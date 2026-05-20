@@ -3,6 +3,7 @@ import Link from 'next/link';
 export default function PrintActions({ projectId }: { projectId: string }) {
   const base = `/print/${projectId}`;
   const items = [
+    { href: `${base}/personeel`, label: 'Personeel' },
     { href: `${base}/offerte`, label: 'Offerte' },
     { href: `${base}/callsheet`, label: 'Callsheet' },
     { href: `${base}/materiaallijst`, label: 'Materiaallijst' },

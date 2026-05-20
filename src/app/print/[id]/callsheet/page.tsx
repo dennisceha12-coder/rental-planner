@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getProjectById } from '@/lib/project-queries';
 import { formatDateNl } from '@/lib/dates';
+import { CREW_PHASE_LABELS, formatStaffLabel, mapCrewShiftFromDb } from '@/lib/crew';
 import PrintHeader from '@/components/print/PrintHeader';
 import PrintToolbar from '@/components/PrintToolbar';
 
@@ -44,6 +45,41 @@ export default async function CallsheetPrintPage({
             />
           </tbody>
         </table>
+
+        {project.crewShifts.length > 0 && (
+          <>
+            <h2 className="border-b border-zinc-300 pb-1 pt-4 text-base font-semibold">
+              Personeelsplanning
+            </h2>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase text-zinc-500">
+                  <th className="pb-2">Fase</th>
+                  <th className="pb-2">Rol</th>
+                  <th className="pb-2">Datum</th>
+                  <th className="pb-2">Tijd</th>
+                  <th className="pb-2">Team</th>
+                </tr>
+              </thead>
+              <tbody>
+                {project.crewShifts.map((shift) => {
+                  const mapped = mapCrewShiftFromDb(shift);
+                  return (
+                  <tr key={shift.id} className="border-b border-zinc-100">
+                    <td className="py-2 font-medium">{CREW_PHASE_LABELS[shift.phase]}</td>
+                    <td className="py-2">{shift.role ?? '—'}</td>
+                    <td className="py-2">{formatDateNl(shift.date)}</td>
+                    <td className="py-2 tabular-nums">
+                      {shift.startTime}–{shift.endTime}
+                    </td>
+                    <td className="py-2">{formatStaffLabel(mapped)}</td>
+                  </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
 
         {project.parkingNotes && (
           <>

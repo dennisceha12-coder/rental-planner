@@ -10,16 +10,24 @@ import {
   equipmentSchema,
   projectSchema,
   projectLineSchema,
+  crewShiftSchema,
+  companySettingsSchema,
+  staffSchema,
 } from '@/lib/validators';
+import { parseStaffIds } from '@/lib/crew';
+import { getCompanySettings } from '@/lib/company-settings';
 
 function revalidateAll(projectId?: string) {
   revalidatePath('/');
   revalidatePath('/catalog');
+  revalidatePath('/staff');
+  revalidatePath('/settings');
   if (projectId) {
     revalidatePath(`/projects/${projectId}`);
     revalidatePath(`/print/${projectId}/offerte`);
     revalidatePath(`/print/${projectId}/callsheet`);
     revalidatePath(`/print/${projectId}/materiaallijst`);
+    revalidatePath(`/print/${projectId}/personeel`);
   }
 }
 
@@ -129,6 +137,9 @@ export async function createProject(formData: FormData) {
     siteContact: formData.get('siteContact') || undefined,
     parkingNotes: formData.get('parkingNotes') || undefined,
     notes: formData.get('notes') || undefined,
+    hourlyRate: formData.get('hourlyRate') ?? '',
+    transportKm: formData.get('transportKm') ?? '',
+    transportRatePerKm: formData.get('transportRatePerKm') ?? '',
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -161,6 +172,9 @@ export async function updateProject(id: string, formData: FormData) {
     siteContact: formData.get('siteContact') || undefined,
     parkingNotes: formData.get('parkingNotes') || undefined,
     notes: formData.get('notes') || undefined,
+    hourlyRate: formData.get('hourlyRate') ?? '',
+    transportKm: formData.get('transportKm') ?? '',
+    transportRatePerKm: formData.get('transportRatePerKm') ?? '',
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -251,5 +265,167 @@ export async function updateProjectLine(lineId: string, formData: FormData) {
 export async function deleteProjectLine(lineId: string, projectId: string) {
   await prisma.projectLine.delete({ where: { id: lineId } });
   revalidateAll(projectId);
+  return { ok: true };
+}
+
+// ——— Crew / personeelsplanning ———
+
+async function syncShiftStaff(shiftId: string, staffIds: string[]) {
+  await prisma.crewShiftStaff.deleteMany({ where: { shiftId } });
+  if (staffIds.length === 0) return;
+  await prisma.crewShiftStaff.createMany({
+    data: staffIds.map((staffId) => ({ shiftId, staffId })),
+  });
+}
+
+export async function addCrewShift(formData: FormData) {
+  const parsed = crewShiftSchema.safeParse({
+    projectId: formData.get('projectId'),
+    phase: formData.get('phase'),
+    role: formData.get('role') || undefined,
+    headcount: formData.get('headcount'),
+    date: formData.get('date'),
+    startTime: formData.get('startTime'),
+    endTime: formData.get('endTime'),
+    hourlyRate: formData.get('hourlyRate') ?? '',
+    staffIds: formData.get('staffIds') ?? '',
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  const date = parseDateInput(parsed.data.date);
+  if (!date) return { error: { date: ['Ongeldige datum'] } };
+
+  const staffIds = parseStaffIds(parsed.data.staffIds ?? '');
+  const { projectId, date: _d, hourlyRate, staffIds: _s, ...rest } = parsed.data;
+  const shift = await prisma.crewShift.create({
+    data: {
+      ...rest,
+      projectId,
+      date,
+      hourlyRate,
+      headcount: staffIds.length > 0 ? Math.max(rest.headcount, staffIds.length) : rest.headcount,
+    },
+  });
+  await syncShiftStaff(shift.id, staffIds);
+  revalidateAll(projectId);
+  return { ok: true };
+}
+
+export async function updateCrewShift(shiftId: string, formData: FormData) {
+  const parsed = crewShiftSchema.safeParse({
+    projectId: formData.get('projectId'),
+    phase: formData.get('phase'),
+    role: formData.get('role') || undefined,
+    headcount: formData.get('headcount'),
+    date: formData.get('date'),
+    startTime: formData.get('startTime'),
+    endTime: formData.get('endTime'),
+    hourlyRate: formData.get('hourlyRate') ?? '',
+    staffIds: formData.get('staffIds') ?? '',
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  const date = parseDateInput(parsed.data.date);
+  if (!date) return { error: { date: ['Ongeldige datum'] } };
+
+  const staffIds = parseStaffIds(parsed.data.staffIds ?? '');
+  const { projectId, date: _d, hourlyRate, staffIds: _s, ...rest } = parsed.data;
+  await prisma.crewShift.update({
+    where: { id: shiftId },
+    data: {
+      ...rest,
+      date,
+      hourlyRate,
+      headcount: staffIds.length > 0 ? Math.max(rest.headcount, staffIds.length) : rest.headcount,
+    },
+  });
+  await syncShiftStaff(shiftId, staffIds);
+  revalidateAll(projectId);
+  return { ok: true };
+}
+
+export async function deleteCrewShift(shiftId: string, projectId: string) {
+  await prisma.crewShift.delete({ where: { id: shiftId } });
+  revalidateAll(projectId);
+  return { ok: true };
+}
+
+export async function updateProjectHourlyRate(projectId: string, formData: FormData) {
+  const hourlyRateRaw = formData.get('hourlyRate');
+  const hourlyRate =
+    hourlyRateRaw === '' || hourlyRateRaw === null
+      ? null
+      : Number(hourlyRateRaw);
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { hourlyRate: hourlyRate != null && Number.isFinite(hourlyRate) ? hourlyRate : null },
+  });
+  revalidateAll(projectId);
+  return { ok: true };
+}
+
+// ——— Company settings ———
+
+export async function updateCompanySettings(formData: FormData) {
+  const parsed = companySettingsSchema.safeParse({
+    companyName: formData.get('companyName'),
+    address: formData.get('address'),
+    email: formData.get('email') || undefined,
+    phone: formData.get('phone') || undefined,
+    kvkNumber: formData.get('kvkNumber') || undefined,
+    vatNumber: formData.get('vatNumber') || undefined,
+    iban: formData.get('iban') || undefined,
+    quoteValidityDays: formData.get('quoteValidityDays'),
+    defaultVatRate: formData.get('defaultVatRate'),
+    paymentTerms: formData.get('paymentTerms') || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  await getCompanySettings();
+  await prisma.companySettings.update({
+    where: { id: 'default' },
+    data: parsed.data,
+  });
+  revalidatePath('/settings');
+  revalidateAll();
+  return { ok: true };
+}
+
+// ——— Staff catalog ———
+
+export async function createStaff(formData: FormData) {
+  const parsed = staffSchema.safeParse({
+    name: formData.get('name'),
+    role: formData.get('role') || undefined,
+    phone: formData.get('phone') || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  await prisma.staff.create({ data: parsed.data });
+  revalidatePath('/staff');
+  return { ok: true };
+}
+
+export async function updateStaff(id: string, formData: FormData) {
+  const parsed = staffSchema.safeParse({
+    name: formData.get('name'),
+    role: formData.get('role') || undefined,
+    phone: formData.get('phone') || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  await prisma.staff.update({ where: { id }, data: parsed.data });
+  revalidatePath('/staff');
+  revalidateAll();
+  return { ok: true };
+}
+
+export async function deleteStaff(id: string) {
+  const used = await prisma.crewShiftStaff.count({ where: { staffId: id } });
+  if (used > 0) {
+    return { error: 'Teamleden met geplande shifts kunnen niet worden verwijderd.' };
+  }
+  await prisma.staff.delete({ where: { id } });
+  revalidatePath('/staff');
   return { ok: true };
 }
