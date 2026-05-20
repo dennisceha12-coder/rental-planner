@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum ProjectStatus {
+  CONCEPT
+  OFFERTE
+  BEVESTIGD
+  AFGEROND
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  vatNumber String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  title        String
+  status       ProjectStatus @default(CONCEPT)
+  quoteNumber  String?
+  clientId     String
+  client       Client        @relation(fields: [clientId], references: [id])
+  location     String?
+  loadIn       DateTime?
+  showDate     DateTime?
+  loadOut      DateTime?
+  loadInTime   String?
+  showTime     String?
+  loadOutTime  String?
+  siteContact  String?
+  parkingNotes String?
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  lines        ProjectLine[]
+}
+
+model Equipment {
+  id        String        @id @default(cuid())
+  name      String
+  category  String?
+  dailyRate Float
+  stockQty  Int?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  lines     ProjectLine[]
+}
+
+model ProjectLine {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+  quantity    Int
+  rentalStart DateTime
+  rentalEnd   DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
