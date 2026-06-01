@@ -84,97 +84,102 @@ function LineForm({
   return (
     <form
       action={onSubmit}
-      className="grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 sm:grid-cols-2 lg:grid-cols-6"
+      className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4"
     >
       <input type="hidden" name="projectId" value={projectId} />
       <input type="hidden" name="lineType" value={lineType} />
 
-      {isCatalog ? (
-        <label className="grid gap-1 text-sm lg:col-span-2">
-          Materiaal
-          <select name="equipmentId" required className="rounded border border-zinc-300 px-3 py-2">
-            <option value="">Kies…</option>
-            {groupEquipmentByCategory(equipment!).map((group) => (
-              <optgroup key={group.key} label={group.name}>
-                {group.items.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.name}
-                    {e.isExternalRental ? ' (inhuur)' : ''} ({formatEur(e.dailyRate)}/dag)
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
-      ) : (
-        <>
-          <label className="grid gap-1 text-sm lg:col-span-2">
-            Omschrijving
-            <input
-              name="customName"
-              type="text"
-              required
-              placeholder="Bijv. extra kabels gehuurd"
-              className="rounded border border-zinc-300 px-3 py-2"
-            />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {isCatalog ? (
+          <label className="grid gap-1 text-sm sm:col-span-2">
+            Materiaal
+            <select name="equipmentId" required className="rounded border border-zinc-300 px-3 py-2">
+              <option value="">Kies…</option>
+              {groupEquipmentByCategory(equipment!).map((group) => (
+                <optgroup key={group.key} label={group.name}>
+                  {group.items.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name}
+                      {e.isExternalRental ? ' (inhuur)' : ''} ({formatEur(e.dailyRate)}/dag)
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </label>
-          <label className="grid gap-1 text-sm">
-            Dagtarief (€)
-            <input
-              name="customDailyRate"
-              type="number"
-              min={0.01}
-              step={0.01}
-              required
-              placeholder="0,00"
-              className="rounded border border-zinc-300 px-3 py-2"
-            />
-          </label>
-        </>
-      )}
+        ) : (
+          <>
+            <label className="grid gap-1 text-sm sm:col-span-2">
+              Omschrijving
+              <input
+                name="customName"
+                type="text"
+                required
+                placeholder="Bijv. extra kabels gehuurd"
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              Dagtarief (€)
+              <input
+                name="customDailyRate"
+                type="number"
+                min={0.01}
+                step={0.01}
+                required
+                placeholder="0,00"
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </>
+        )}
 
-      <label className="grid gap-1 text-sm">
-        Aantal
-        <input
-          name="quantity"
-          type="number"
-          min={1}
-          defaultValue={1}
-          required
-          className="rounded border border-zinc-300 px-3 py-2"
-        />
-      </label>
-      <label className="grid gap-1 text-sm">
-        Van
-        <input
-          name="rentalStart"
-          type="date"
-          required
-          defaultValue={defaultStart}
-          className="rounded border border-zinc-300 px-3 py-2"
-        />
-      </label>
-      <label className="grid gap-1 text-sm">
-        Tot
-        <input
-          name="rentalEnd"
-          type="date"
-          required
-          defaultValue={defaultEnd}
-          className="rounded border border-zinc-300 px-3 py-2"
-        />
-      </label>
-      <div className="grid gap-1 text-sm">
-        <span>Korting</span>
-        <DiscountFields />
+        <label className="grid gap-1 text-sm">
+          Aantal
+          <input
+            name="quantity"
+            type="number"
+            min={1}
+            defaultValue={1}
+            required
+            className="rounded border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="grid gap-1 text-sm">
+          Van
+          <input
+            name="rentalStart"
+            type="date"
+            required
+            defaultValue={defaultStart}
+            className="rounded border border-zinc-300 px-3 py-2"
+          />
+        </label>
+        <label className="grid gap-1 text-sm">
+          Tot
+          <input
+            name="rentalEnd"
+            type="date"
+            required
+            defaultValue={defaultEnd}
+            className="rounded border border-zinc-300 px-3 py-2"
+          />
+        </label>
       </div>
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-end rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 lg:col-span-6 lg:w-fit"
-      >
-        {isCatalog ? 'Uit catalogus toevoegen' : 'Tijdelijk materiaal toevoegen'}
-      </button>
+
+      <div className="flex flex-wrap items-end gap-3 border-t border-zinc-200 pt-3">
+        <div className="grid gap-1 text-sm">
+          <span>Korting (optioneel)</span>
+          <DiscountFields />
+        </div>
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {isCatalog ? 'Uit catalogus toevoegen' : 'Tijdelijk materiaal toevoegen'}
+        </button>
+      </div>
     </form>
   );
 }
@@ -189,7 +194,7 @@ function LineDiscountForm({
   onSubmit: (fd: FormData) => void;
 }) {
   return (
-    <form action={onSubmit} className="flex flex-wrap items-center gap-1">
+    <form action={onSubmit} className="flex min-w-[9rem] flex-col gap-1">
       <input type="hidden" name="projectId" value={line.projectId} />
       <DiscountFields
         discountType={line.discountType}
@@ -199,7 +204,7 @@ function LineDiscountForm({
       <button
         type="submit"
         disabled={pending}
-        className="text-xs text-zinc-600 hover:text-zinc-900 disabled:opacity-50"
+        className="self-start text-xs text-zinc-600 hover:text-zinc-900 disabled:opacity-50"
       >
         Opslaan
       </button>
@@ -297,7 +302,7 @@ export default function ProjectLinesSection({
         <p className="text-sm text-zinc-500">Nog geen materiaal op dit project.</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[860px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
               <tr>
                 <th className="px-4 py-2">Materiaal</th>

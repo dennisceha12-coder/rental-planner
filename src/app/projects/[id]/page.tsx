@@ -74,10 +74,12 @@ export default async function ProjectPage({
         <ProjectExportButton projectId={project.id} title={project.title} />
       </div>
 
-      <ProjectCostSummary
-        lines={project.lines}
-        costs={projectToCostFields(project)}
-      />
+      {activeTab !== 'financieel' && (
+        <ProjectCostSummary
+          lines={project.lines}
+          costs={projectToCostFields(project)}
+        />
+      )}
 
       <div className="flex gap-1 border-b border-zinc-200">
         {tabs.map((t) => (
