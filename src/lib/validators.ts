@@ -36,25 +36,64 @@ export const equipmentSchema = z.object({
   stockQty: z.coerce.number().int().positive().optional().or(z.literal('')),
 });
 
-export const projectSchema = z.object({
-  title: z.string().min(1, 'Titel is verplicht'),
-  status: projectStatusSchema,
-  quoteNumber: z.string().optional(),
-  clientId: z.string().min(1),
-  location: z.string().optional(),
-  loadIn: z.string().optional(),
-  showDate: z.string().optional(),
-  loadOut: z.string().optional(),
-  loadInTime: z.string().optional(),
-  showTime: z.string().optional(),
-  loadOutTime: z.string().optional(),
-  siteContact: z.string().optional(),
-  parkingNotes: z.string().optional(),
-  notes: z.string().optional(),
-  hourlyRate: optionalNonNegativeNumber,
-  transportKm: optionalNonNegativeNumber,
-  transportRatePerKm: optionalNonNegativeNumber,
-});
+export const discountTypeSchema = z.enum(['PERCENTAGE', 'AMOUNT']);
+
+export const projectSchema = z
+  .object({
+    title: z.string().min(1, 'Titel is verplicht'),
+    status: projectStatusSchema,
+    quoteNumber: z.string().optional(),
+    clientId: z.string().min(1),
+    location: z.string().optional(),
+    loadIn: z.string().optional(),
+    showDate: z.string().optional(),
+    loadOut: z.string().optional(),
+    loadInTime: z.string().optional(),
+    showTime: z.string().optional(),
+    loadOutTime: z.string().optional(),
+    siteContact: z.string().optional(),
+    parkingNotes: z.string().optional(),
+    notes: z.string().optional(),
+    hourlyRate: optionalNonNegativeNumber,
+    transportKm: optionalNonNegativeNumber,
+    transportRatePerKm: optionalNonNegativeNumber,
+    discountType: z
+      .string()
+      .optional()
+      .transform((v) => (v === 'PERCENTAGE' || v === 'AMOUNT' ? v : null)),
+    discountValue: optionalNonNegativeNumber,
+  })
+  .superRefine((data, ctx) => {
+    if (data.discountType && (data.discountValue == null || data.discountValue <= 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Vul een kortingswaarde in',
+        path: ['discountValue'],
+      });
+    }
+    if (
+      data.discountType === 'PERCENTAGE' &&
+      data.discountValue != null &&
+      data.discountValue > 100
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Percentage mag maximaal 100 zijn',
+        path: ['discountValue'],
+      });
+    }
+    if (!data.discountType && data.discountValue != null && data.discountValue > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Kies een kortingstype',
+        path: ['discountType'],
+      });
+    }
+  })
+  .transform((data) => ({
+    ...data,
+    discountValue: data.discountType ? data.discountValue : null,
+  }));
 
 export const crewPhaseSchema = z.enum(['OPBOUW', 'SHOW', 'AFBOUW']);
 

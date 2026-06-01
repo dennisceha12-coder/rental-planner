@@ -10,7 +10,7 @@ export default async function StaffPage() {
       <div>
         <h1 className="text-2xl font-semibold">Team</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Teamleden kun je toewijzen aan shifts in de personeelsplanning per klus.
+          Teamleden kun je toewijzen aan shifts in de personeelsplanning per project.
         </p>
       </div>
 

@@ -1,6 +1,6 @@
 # Rental Planner
 
-Kleinschalige verhuurplanning: klussen, materiaal, personeelsplanning, offertes en callsheets.
+Kleinschalige verhuurplanning: projecten, materiaal, personeelsplanning, offertes en callsheets.
 
 ## Lokaal draaien
 
@@ -18,7 +18,7 @@ Open [http://localhost:3000](http://localhost:3000).
 1. **Bedrijf** (`/settings`) — vul leveranciergegevens in (KvK, BTW, IBAN) voor offertes
 2. **Catalogus** — materiaal met dagtarieven
 3. **Team** — teamleden voor personeelsplanning
-4. **Nieuwe klus** — materiaal, personeel, transport → documenten printen
+4. **Nieuw project** — materiaal, personeel, transport, korting → documenten printen
 
 ## Deploy op Railway
 
@@ -30,7 +30,7 @@ SQLite vereist persistent storage. Gebruik Railway (niet Vercel serverless).
 4. Deploy (Dockerfile wordt automatisch gebruikt via `railway.toml`)
 5. Optioneel na eerste deploy: Railway shell → `npm run db:seed`
 
-## Documenten per klus
+## Documenten per project
 
 | Document | Route |
 |----------|--------|

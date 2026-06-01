@@ -13,20 +13,62 @@ import {
 } from '@/lib/crew';
 import type { CrewPhase } from '@/generated/prisma/client';
 
+export type DiscountType = 'PERCENTAGE' | 'AMOUNT';
+
+export type ProjectDiscount = {
+  discountType: DiscountType | null;
+  discountValue: number | null;
+};
+
 export type ProjectCostFields = {
   hourlyRate: number | null;
   transportKm: number | null;
   transportRatePerKm: number | null;
   crewShifts: CrewShiftInput[];
-};
+} & ProjectDiscount;
 
 export type ProjectTotals = {
   material: number;
   laborByPhase: Record<CrewPhase, number>;
   labor: number;
   transport: number;
+  subtotalBeforeDiscount: number;
+  discountAmount: number;
   grandTotal: number;
 };
+
+export function computeDiscountAmount(
+  subtotal: number,
+  discount: ProjectDiscount
+): number {
+  if (
+    !discount.discountType ||
+    discount.discountValue == null ||
+    discount.discountValue <= 0 ||
+    subtotal <= 0
+  ) {
+    return 0;
+  }
+  if (discount.discountType === 'PERCENTAGE') {
+    const pct = Math.min(discount.discountValue, 100);
+    return subtotal * (pct / 100);
+  }
+  return Math.min(discount.discountValue, subtotal);
+}
+
+export function formatDiscountLabel(discount: ProjectDiscount): string {
+  if (
+    !discount.discountType ||
+    discount.discountValue == null ||
+    discount.discountValue <= 0
+  ) {
+    return '';
+  }
+  if (discount.discountType === 'PERCENTAGE') {
+    return `${discount.discountValue}%`;
+  }
+  return 'vast bedrag';
+}
 
 export function transportTotal(
   km: number | null,
@@ -44,12 +86,16 @@ export function computeProjectTotals(
   const laborByPhase = crewCostByPhase(costs.crewShifts, costs.hourlyRate);
   const labor = crewTotalCost(costs.crewShifts, costs.hourlyRate);
   const transport = transportTotal(costs.transportKm, costs.transportRatePerKm);
+  const subtotalBeforeDiscount = material + labor + transport;
+  const discountAmount = computeDiscountAmount(subtotalBeforeDiscount, costs);
   return {
     material,
     laborByPhase,
     labor,
     transport,
-    grandTotal: material + labor + transport,
+    subtotalBeforeDiscount,
+    discountAmount,
+    grandTotal: Math.max(0, subtotalBeforeDiscount - discountAmount),
   };
 }
 
@@ -109,12 +155,16 @@ export function projectToCostFields(project: {
   hourlyRate: number | null;
   transportKm: number | null;
   transportRatePerKm: number | null;
+  discountType: DiscountType | null;
+  discountValue: number | null;
   crewShifts: Parameters<typeof mapCrewShiftFromDb>[0][];
 }): ProjectCostFields {
   return {
     hourlyRate: project.hourlyRate,
     transportKm: project.transportKm,
     transportRatePerKm: project.transportRatePerKm,
+    discountType: project.discountType,
+    discountValue: project.discountValue,
     crewShifts: project.crewShifts.map(mapCrewShiftFromDb),
   };
 }

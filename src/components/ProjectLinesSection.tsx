@@ -114,7 +114,7 @@ export default function ProjectLinesSection({
       </form>
 
       {lines.length === 0 ? (
-        <p className="text-sm text-zinc-500">Nog geen materiaal op deze klus.</p>
+        <p className="text-sm text-zinc-500">Nog geen materiaal op dit project.</p>
       ) : (
         <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
           <table className="w-full text-left text-sm">

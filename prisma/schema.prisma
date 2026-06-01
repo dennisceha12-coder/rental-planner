@@ -20,6 +20,11 @@ enum CrewPhase {
   AFBOUW
 }
 
+enum DiscountType {
+  PERCENTAGE
+  AMOUNT
+}
+
 model CompanySettings {
   id                String @id @default("default")
   companyName       String @default("")
@@ -66,6 +71,8 @@ model Project {
   hourlyRate       Float?
   transportKm      Float?
   transportRatePerKm Float?
+  discountType     DiscountType?
+  discountValue    Float?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   lines        ProjectLine[]

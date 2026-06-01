@@ -96,7 +96,7 @@ export async function updateEquipment(id: string, formData: FormData) {
 export async function deleteEquipment(id: string) {
   const used = await prisma.projectLine.count({ where: { equipmentId: id } });
   if (used > 0) {
-    return { error: 'Materiaal is gekoppeld aan klussen en kan niet worden verwijderd.' };
+    return { error: 'Materiaal is gekoppeld aan projecten en kan niet worden verwijderd.' };
   }
   await prisma.equipment.delete({ where: { id } });
   revalidatePath('/catalog');
@@ -140,6 +140,8 @@ export async function createProject(formData: FormData) {
     hourlyRate: formData.get('hourlyRate') ?? '',
     transportKm: formData.get('transportKm') ?? '',
     transportRatePerKm: formData.get('transportRatePerKm') ?? '',
+    discountType: formData.get('discountType') ?? '',
+    discountValue: formData.get('discountValue') ?? '',
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -175,6 +177,8 @@ export async function updateProject(id: string, formData: FormData) {
     hourlyRate: formData.get('hourlyRate') ?? '',
     transportKm: formData.get('transportKm') ?? '',
     transportRatePerKm: formData.get('transportRatePerKm') ?? '',
+    discountType: formData.get('discountType') ?? '',
+    discountValue: formData.get('discountValue') ?? '',
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 

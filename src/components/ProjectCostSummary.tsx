@@ -1,5 +1,9 @@
 import { formatEur } from '@/lib/pricing';
-import { computeProjectTotals, type ProjectCostFields } from '@/lib/project-totals';
+import {
+  computeProjectTotals,
+  formatDiscountLabel,
+  type ProjectCostFields,
+} from '@/lib/project-totals';
 import { crewPhaseSummaries } from '@/lib/crew';
 import type { LineWithEquipment } from '@/lib/pricing';
 
@@ -35,6 +39,12 @@ export default function ProjectCostSummary({
           <div className="flex justify-between gap-4 text-zinc-600">
             <dt>Transport</dt>
             <dd className="tabular-nums">{formatEur(t.transport)}</dd>
+          </div>
+        )}
+        {t.discountAmount > 0 && (
+          <div className="flex justify-between gap-4 text-zinc-600">
+            <dt>Korting ({formatDiscountLabel(costs)})</dt>
+            <dd className="tabular-nums text-red-700">−{formatEur(t.discountAmount)}</dd>
           </div>
         )}
         <div className="flex justify-between gap-4 border-t border-zinc-200 pt-2">

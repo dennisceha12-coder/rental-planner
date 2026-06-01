@@ -1,11 +1,11 @@
 import Link from 'next/link';
 
 const links = [
-  { href: '/', label: 'Klussen' },
+  { href: '/', label: 'Projecten' },
   { href: '/catalog', label: 'Catalogus' },
   { href: '/staff', label: 'Team' },
   { href: '/settings', label: 'Bedrijf' },
-  { href: '/projects/new', label: 'Nieuwe klus' },
+  { href: '/projects/new', label: 'Nieuw project' },
 ];
 
 export default function Nav() {

@@ -6,6 +6,7 @@ import {
   computeProjectTotals,
   quoteExtraLines,
   projectToCostFields,
+  formatDiscountLabel,
 } from '@/lib/project-totals';
 import {
   getCompanySettings,
@@ -181,6 +182,16 @@ export default async function OffertePrintPage({
             <tr>
               <td className="py-1 text-right text-zinc-600">Transport</td>
               <td className="py-1 pl-4 text-right tabular-nums">{formatEur(totals.transport)}</td>
+            </tr>
+          )}
+          {totals.discountAmount > 0 && (
+            <tr>
+              <td className="py-1 text-right text-zinc-600">
+                Korting ({formatDiscountLabel(project)})
+              </td>
+              <td className="py-1 pl-4 text-right tabular-nums text-red-700">
+                −{formatEur(totals.discountAmount)}
+              </td>
             </tr>
           )}
           <tr className="border-t border-zinc-300">

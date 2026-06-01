@@ -8,7 +8,7 @@ const geist = Geist({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Rental Planner',
-  description: 'Kleinschalige verhuurplanning: klussen, materiaal en documenten',
+  description: 'Kleinschalige verhuurplanning: projecten, materiaal en documenten',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

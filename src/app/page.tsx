@@ -18,12 +18,12 @@ export default async function HomePage({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Klussen</h1>
+        <h1 className="text-2xl font-semibold">Projecten</h1>
         <Link
           href="/projects/new"
           className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
         >
-          Nieuwe klus
+          Nieuw project
         </Link>
       </div>
 
@@ -41,9 +41,9 @@ export default async function HomePage({
 
       {projects.length === 0 ? (
         <p className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center text-zinc-500">
-          Nog geen klussen.{' '}
+          Nog geen projecten.{' '}
           <Link href="/projects/new" className="font-medium text-zinc-900 underline">
-            Maak de eerste klus aan
+            Maak het eerste project aan
           </Link>
         </p>
       ) : (

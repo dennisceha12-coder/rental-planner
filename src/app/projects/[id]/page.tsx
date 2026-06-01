@@ -50,7 +50,7 @@ export default async function ProjectPage({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
-            ← Klussen
+            ← Projecten
           </Link>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold">{project.title}</h1>

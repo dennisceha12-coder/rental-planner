@@ -41,7 +41,7 @@ export default function ProjectForm({
     <form action={onSubmit} className="max-w-2xl space-y-6 rounded-lg border border-zinc-200 bg-white p-6">
       <fieldset className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1 text-sm sm:col-span-2">
-          Titel klus *
+          Projecttitel *
           <input
             name="title"
             required
@@ -206,6 +206,39 @@ export default function ProjectForm({
           </p>
         </div>
 
+        <div className="sm:col-span-2 mt-2 border-t border-zinc-200 pt-4">
+          <h3 className="mb-3 text-sm font-semibold text-zinc-900">Korting (offerte)</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-1 text-sm">
+              Type
+              <select
+                name="discountType"
+                defaultValue={project?.discountType ?? ''}
+                className="rounded border border-zinc-300 px-3 py-2"
+              >
+                <option value="">Geen korting</option>
+                <option value="PERCENTAGE">Percentage</option>
+                <option value="AMOUNT">Vast bedrag (EUR)</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm">
+              Waarde
+              <input
+                name="discountValue"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder={project?.discountType === 'PERCENTAGE' ? 'bijv. 10' : 'bijv. 250'}
+                defaultValue={project?.discountValue ?? ''}
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </div>
+          <p className="mt-2 text-xs text-zinc-500">
+            Korting wordt berekend over het totaal van materiaal, personeel en transport.
+          </p>
+        </div>
+
         <label className="grid gap-1 text-sm sm:col-span-2">
           Contact op locatie
           <input
@@ -239,7 +272,7 @@ export default function ProjectForm({
         disabled={pending}
         className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {pending ? 'Opslaan…' : isEdit ? 'Klus bijwerken' : 'Klus aanmaken'}
+        {pending ? 'Opslaan…' : isEdit ? 'Project bijwerken' : 'Project aanmaken'}
       </button>
     </form>
   );
