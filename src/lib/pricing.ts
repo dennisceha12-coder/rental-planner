@@ -36,6 +36,10 @@ export function formatEur(amount: number): string {
   }).format(amount);
 }
 
+export function formatDailyRate(rate: number): string {
+  return rate === 0 ? 'Gratis' : formatEur(rate);
+}
+
 export function computeDiscountAmount(
   subtotal: number,
   discount: LineDiscount

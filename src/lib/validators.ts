@@ -46,7 +46,7 @@ export const equipmentSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v && v.trim() !== '' ? v.trim() : null)),
-  dailyRate: z.coerce.number().positive('Dagtarief moet positief zijn'),
+  dailyRate: z.coerce.number().min(0, 'Dagtarief mag niet negatief zijn'),
   stockQty: z
     .union([z.literal(''), z.coerce.number().int().positive()])
     .optional()
@@ -250,11 +250,11 @@ export const projectLineSchema = z
       if (
         data.customDailyRate == null ||
         !Number.isFinite(data.customDailyRate) ||
-        data.customDailyRate <= 0
+        data.customDailyRate < 0
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Dagtarief moet positief zijn',
+          message: 'Dagtarief mag niet negatief zijn',
           path: ['customDailyRate'],
         });
       }

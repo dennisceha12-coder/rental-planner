@@ -86,12 +86,17 @@ export default function EquipmentForm({
           name="dailyRate"
           type="number"
           step="0.01"
-          min="0.01"
+          min="0"
           required
+          placeholder="0 voor gratis"
           defaultValue={equipment?.dailyRate}
           className="rounded border border-zinc-300 px-3 py-2"
         />
       </label>
+      <p className="text-xs text-zinc-500">
+        Vul 0 in voor gratis materiaal — het verschijnt wel op de materiaallijst, maar telt niet mee
+        in de offerte.
+      </p>
       <label className="grid gap-1 text-sm">
         Voorraad (leeg = onbeperkt)
         <input

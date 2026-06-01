@@ -134,7 +134,8 @@ function LineForm({
                     {group.items.map((e) => (
                       <option key={e.id} value={e.id}>
                         {e.name}
-                        {e.isExternalRental ? ' (inhuur)' : ''} ({formatEur(e.dailyRate)}/dag)
+                        {e.isExternalRental ? ' (inhuur)' : ''} (
+                        {e.dailyRate === 0 ? 'Gratis' : `${formatEur(e.dailyRate)}/dag`})
                       </option>
                     ))}
                   </optgroup>
@@ -159,7 +160,7 @@ function LineForm({
               <input
                 name="customDailyRate"
                 type="number"
-                min={0.01}
+                min={0}
                 step={0.01}
                 required
                 placeholder="0,00"
@@ -255,7 +256,7 @@ function LineEditForm({
               <input
                 name="customDailyRate"
                 type="number"
-                min={0.01}
+                min={0}
                 step={0.01}
                 required
                 defaultValue={line.customDailyRate ?? ''}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { formatEur } from '@/lib/pricing';
+import { formatEur, formatDailyRate } from '@/lib/pricing';
 import { groupEquipmentByCategory, categoryDisplayName } from '@/lib/equipment-categories';
 import EquipmentForm from '@/components/EquipmentForm';
 import DeleteEquipmentButton from '@/components/DeleteEquipmentButton';
@@ -90,7 +90,7 @@ export default function CatalogEquipmentList({
                   {group.items.map((item) => (
                     <tr key={item.id}>
                       <td className="px-4 py-3 font-medium">{item.name}</td>
-                      <td className="px-4 py-3 tabular-nums">{formatEur(item.dailyRate)}</td>
+                      <td className="px-4 py-3 tabular-nums">{formatDailyRate(item.dailyRate)}</td>
                       <td className="px-4 py-3">{item.stockQty ?? '∞'}</td>
                       <td className="px-4 py-3 text-zinc-600">
                         {item.isExternalRental ? (
