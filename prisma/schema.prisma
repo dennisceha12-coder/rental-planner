@@ -122,15 +122,25 @@ model CrewShiftStaff {
   @@unique([shiftId, staffId])
 }
 
+model EquipmentCategory {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  sortOrder Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  equipment Equipment[]
+}
+
 model Equipment {
-  id               String        @id @default(cuid())
+  id               String             @id @default(cuid())
   name             String
-  category         String?
+  categoryId       String?
+  category         EquipmentCategory? @relation(fields: [categoryId], references: [id])
   dailyRate        Float
   stockQty         Int?
-  isExternalRental Boolean       @default(false)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  isExternalRental Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
   lines            ProjectLine[]
 }
 

@@ -15,7 +15,16 @@ import {
   type ProjectLineRecord,
 } from '@/lib/pricing';
 import { toDateInputValue } from '@/lib/dates';
-import type { Equipment } from '@/generated/prisma/client';
+import { groupEquipmentByCategory } from '@/lib/equipment-categories';
+
+type CatalogEquipment = {
+  id: string;
+  name: string;
+  dailyRate: number;
+  isExternalRental: boolean;
+  categoryId: string | null;
+  category: { id: string; name: string; sortOrder: number } | null;
+};
 
 type Line = ProjectLineRecord & { id: string; projectId: string };
 
@@ -30,7 +39,7 @@ function LineForm({
 }: {
   projectId: string;
   lineType: 'catalog' | 'custom';
-  equipment?: Equipment[];
+  equipment?: CatalogEquipment[];
   defaultStart?: string;
   defaultEnd?: string;
   pending: boolean;
@@ -51,11 +60,15 @@ function LineForm({
           Materiaal
           <select name="equipmentId" required className="rounded border border-zinc-300 px-3 py-2">
             <option value="">Kies…</option>
-            {equipment!.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name}
-                {e.isExternalRental ? ' (inhuur)' : ''} ({formatEur(e.dailyRate)}/dag)
-              </option>
+            {groupEquipmentByCategory(equipment!).map((group) => (
+              <optgroup key={group.key} label={group.name}>
+                {group.items.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                    {e.isExternalRental ? ' (inhuur)' : ''} ({formatEur(e.dailyRate)}/dag)
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>
@@ -137,7 +150,7 @@ export default function ProjectLinesSection({
 }: {
   projectId: string;
   lines: Line[];
-  equipment: Equipment[];
+  equipment: CatalogEquipment[];
   defaultStart?: string;
   defaultEnd?: string;
 }) {

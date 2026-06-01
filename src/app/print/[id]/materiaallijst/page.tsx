@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import { getProjectById } from '@/lib/project-queries';
 import { formatDateNl } from '@/lib/dates';
-import { projectLineName, projectLineCategory } from '@/lib/pricing';
+import { projectLineName } from '@/lib/pricing';
+import { groupProjectLinesByCategory } from '@/lib/equipment-categories';
 import PrintHeader from '@/components/print/PrintHeader';
 import PrintToolbar from '@/components/PrintToolbar';
 
@@ -14,14 +15,7 @@ export default async function MateriaallijstPrintPage({
   const project = await getProjectById(id);
   if (!project) notFound();
 
-  const grouped = new Map<string, typeof project.lines>();
-  for (const line of project.lines) {
-    const cat = projectLineCategory(line) ?? 'Overig';
-    if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push(line);
-  }
-
-  const categories = [...grouped.keys()].sort((a, b) => a.localeCompare(b, 'nl'));
+  const groups = groupProjectLinesByCategory(project.lines);
 
   return (
     <>
@@ -35,12 +29,12 @@ export default async function MateriaallijstPrintPage({
         Locatie: {project.location ?? '—'} · {project.lines.length} regel(s)
       </p>
 
-      {categories.length === 0 ? (
+      {groups.length === 0 ? (
         <p className="text-sm text-zinc-500">Geen materiaal geboekt.</p>
       ) : (
-        categories.map((cat) => (
-          <section key={cat} className="print-page mb-6">
-            <h2 className="mb-2 border-b border-zinc-400 text-base font-semibold">{cat}</h2>
+        groups.map((group) => (
+          <section key={group.key} className="print-page mb-6">
+            <h2 className="mb-2 border-b border-zinc-400 text-base font-semibold">{group.name}</h2>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase text-zinc-500">
@@ -50,7 +44,7 @@ export default async function MateriaallijstPrintPage({
                 </tr>
               </thead>
               <tbody>
-                {grouped.get(cat)!.map((line) => (
+                {group.items.map((line) => (
                   <tr key={line.id} className="border-b border-zinc-100">
                     <td className="py-2 font-bold tabular-nums">{line.quantity}×</td>
                     <td className="py-2">{projectLineName(line)}</td>

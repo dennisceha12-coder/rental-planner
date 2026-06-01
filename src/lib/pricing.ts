@@ -1,3 +1,5 @@
+import { CUSTOM_LINE_CATEGORY_NAME, categoryDisplayName } from '@/lib/equipment-categories';
+
 export function lineTotal(
   quantity: number,
   dailyRate: number,
@@ -38,10 +40,14 @@ export type ProjectLineRecord = {
   equipment: {
     id: string;
     name: string;
-    category: string | null;
     dailyRate: number;
     stockQty: number | null;
     isExternalRental: boolean;
+    category: {
+      id: string;
+      name: string;
+      sortOrder: number;
+    } | null;
   } | null;
 };
 
@@ -60,14 +66,15 @@ export function externalRentalLines(lines: ProjectLineRecord[]): ProjectLineReco
   return lines.filter(isExternalRentalLine);
 }
 
+
 export function projectLineName(line: ProjectLineRecord): string {
   if (isCustomProjectLine(line)) return line.customName!.trim();
   return line.equipment?.name ?? 'Onbekend';
 }
 
 export function projectLineCategory(line: ProjectLineRecord): string | null {
-  if (isCustomProjectLine(line)) return 'Tijdelijk';
-  return line.equipment?.category ?? null;
+  if (isCustomProjectLine(line)) return CUSTOM_LINE_CATEGORY_NAME;
+  return categoryDisplayName(line.equipment?.category);
 }
 
 export function projectLineDailyRate(line: ProjectLineRecord): number {

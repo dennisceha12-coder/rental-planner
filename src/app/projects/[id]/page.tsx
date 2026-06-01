@@ -28,7 +28,10 @@ export default async function ProjectPage({
 
   const [clients, equipment, staffList] = await Promise.all([
     prisma.client.findMany({ orderBy: { name: 'asc' } }),
-    prisma.equipment.findMany({ orderBy: { name: 'asc' } }),
+    prisma.equipment.findMany({
+      include: { category: true },
+      orderBy: [{ category: { sortOrder: 'asc' } }, { name: 'asc' }],
+    }),
     prisma.staff.findMany({ orderBy: { name: 'asc' } }),
   ]);
 

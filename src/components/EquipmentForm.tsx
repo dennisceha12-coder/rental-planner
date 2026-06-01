@@ -2,17 +2,31 @@
 
 import { useTransition } from 'react';
 import { createEquipment, updateEquipment } from '@/app/actions';
+import { categoryDisplayName } from '@/lib/equipment-categories';
+
+type Category = {
+  id: string;
+  name: string;
+  sortOrder: number;
+};
 
 type Equipment = {
   id: string;
   name: string;
-  category: string | null;
+  categoryId: string | null;
+  category: Category | null;
   dailyRate: number;
   stockQty: number | null;
   isExternalRental: boolean;
 };
 
-export default function EquipmentForm({ equipment }: { equipment?: Equipment }) {
+export default function EquipmentForm({
+  equipment,
+  categories,
+}: {
+  equipment?: Equipment;
+  categories: Category[];
+}) {
   const [pending, startTransition] = useTransition();
 
   function onSubmit(formData: FormData) {
@@ -41,11 +55,18 @@ export default function EquipmentForm({ equipment }: { equipment?: Equipment }) 
       </label>
       <label className="grid gap-1 text-sm">
         Categorie
-        <input
-          name="category"
-          defaultValue={equipment?.category ?? ''}
+        <select
+          name="categoryId"
+          defaultValue={equipment?.categoryId ?? ''}
           className="rounded border border-zinc-300 px-3 py-2"
-        />
+        >
+          <option value="">Geen ({categoryDisplayName(null)})</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="grid gap-1 text-sm">
         Dagtarief (EUR) *

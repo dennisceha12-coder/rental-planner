@@ -5,7 +5,9 @@ import type { CrewShiftInput } from '@/lib/crew';
 export const projectInclude = {
   client: true,
   lines: {
-    include: { equipment: true },
+    include: {
+      equipment: { include: { category: true } },
+    },
     orderBy: { rentalStart: 'asc' as const },
   },
   crewShifts: {
@@ -28,7 +30,7 @@ export async function listProjects(status?: string) {
     where: status ? { status: status as 'CONCEPT' | 'OFFERTE' | 'BEVESTIGD' | 'AFGEROND' } : undefined,
     include: {
       client: true,
-      lines: { include: { equipment: true } },
+      lines: { include: { equipment: { include: { category: true } } } },
       crewShifts: {
         include: { staffAssignments: { include: { staff: true } } },
       },

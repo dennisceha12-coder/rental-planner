@@ -19,6 +19,7 @@ async function main() {
   await prisma.project.deleteMany();
   await prisma.client.deleteMany();
   await prisma.equipment.deleteMany();
+  await prisma.equipmentCategory.deleteMany();
   await prisma.staff.deleteMany();
 
   await prisma.companySettings.upsert({
@@ -39,6 +40,16 @@ async function main() {
     update: {},
   });
 
+  const catGeluid = await prisma.equipmentCategory.create({
+    data: { name: 'Geluid', sortOrder: 0 },
+  });
+  const catLicht = await prisma.equipmentCategory.create({
+    data: { name: 'Licht', sortOrder: 1 },
+  });
+  const catRigging = await prisma.equipmentCategory.create({
+    data: { name: 'Rigging', sortOrder: 2 },
+  });
+
   const client = await prisma.client.create({
     data: {
       name: 'Demo Events BV',
@@ -54,13 +65,28 @@ async function main() {
   const tech3 = await prisma.staff.create({ data: { name: 'Kees de Vries', role: 'Rigger' } });
 
   const pa = await prisma.equipment.create({
-    data: { name: 'PA-systeem compact', category: 'Geluid', dailyRate: 150, stockQty: 3 },
+    data: {
+      name: 'PA-systeem compact',
+      categoryId: catGeluid.id,
+      dailyRate: 150,
+      stockQty: 3,
+    },
   });
   const licht = await prisma.equipment.create({
-    data: { name: 'LED PAR set (4x)', category: 'Licht', dailyRate: 80, stockQty: 5 },
+    data: {
+      name: 'LED PAR set (4x)',
+      categoryId: catLicht.id,
+      dailyRate: 80,
+      stockQty: 5,
+    },
   });
   const truss = await prisma.equipment.create({
-    data: { name: 'Truss 3m', category: 'Rigging', dailyRate: 25, stockQty: 20 },
+    data: {
+      name: 'Truss 3m',
+      categoryId: catRigging.id,
+      dailyRate: 25,
+      stockQty: 20,
+    },
   });
 
   const loadIn = new Date('2026-06-10');

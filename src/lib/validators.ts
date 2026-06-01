@@ -29,9 +29,17 @@ export const clientSchema = z.object({
   vatNumber: z.string().optional(),
 });
 
+export const equipmentCategorySchema = z.object({
+  name: z.string().min(1, 'Naam is verplicht'),
+  sortOrder: z.coerce.number().int().min(0).optional(),
+});
+
 export const equipmentSchema = z.object({
   name: z.string().min(1, 'Naam is verplicht'),
-  category: z.string().optional(),
+  categoryId: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() !== '' ? v.trim() : null)),
   dailyRate: z.coerce.number().positive('Dagtarief moet positief zijn'),
   stockQty: z.coerce.number().int().positive().optional().or(z.literal('')),
   isExternalRental: z

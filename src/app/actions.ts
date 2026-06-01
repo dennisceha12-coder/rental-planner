@@ -7,6 +7,7 @@ import { parseDateInput } from '@/lib/dates';
 import { generateQuoteNumber } from '@/lib/quotes';
 import {
   clientSchema,
+  equipmentCategorySchema,
   equipmentSchema,
   projectSchema,
   projectLineSchema,
@@ -49,13 +50,63 @@ export async function createClient(formData: FormData) {
   return { clientId: client.id };
 }
 
+// ——— Equipment categories ———
+
+export async function createEquipmentCategory(formData: FormData) {
+  const parsed = equipmentCategorySchema.safeParse({
+    name: formData.get('name'),
+    sortOrder: formData.get('sortOrder') || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  let sortOrder = parsed.data.sortOrder;
+  if (sortOrder == null) {
+    const max = await prisma.equipmentCategory.aggregate({ _max: { sortOrder: true } });
+    sortOrder = (max._max.sortOrder ?? -1) + 1;
+  }
+
+  await prisma.equipmentCategory.create({
+    data: { name: parsed.data.name.trim(), sortOrder },
+  });
+  revalidatePath('/catalog');
+  return { ok: true };
+}
+
+export async function updateEquipmentCategory(id: string, formData: FormData) {
+  const parsed = equipmentCategorySchema.safeParse({
+    name: formData.get('name'),
+    sortOrder: formData.get('sortOrder') || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  const data: { name: string; sortOrder?: number } = { name: parsed.data.name.trim() };
+  if (parsed.data.sortOrder != null) data.sortOrder = parsed.data.sortOrder;
+
+  await prisma.equipmentCategory.update({ where: { id }, data });
+  revalidatePath('/catalog');
+  revalidateAll();
+  return { ok: true };
+}
+
+export async function deleteEquipmentCategory(id: string) {
+  const used = await prisma.equipment.count({ where: { categoryId: id } });
+  if (used > 0) {
+    return {
+      error: `Categorie is gekoppeld aan ${used} materiaalitem(s) en kan niet worden verwijderd.`,
+    };
+  }
+  await prisma.equipmentCategory.delete({ where: { id } });
+  revalidatePath('/catalog');
+  return { ok: true };
+}
+
 // ——— Equipment ———
 
 export async function createEquipment(formData: FormData) {
   const stockRaw = formData.get('stockQty');
   const parsed = equipmentSchema.safeParse({
     name: formData.get('name'),
-    category: formData.get('category') || undefined,
+    categoryId: formData.get('categoryId') || undefined,
     dailyRate: formData.get('dailyRate'),
     stockQty: stockRaw === '' || stockRaw === null ? '' : stockRaw,
     isExternalRental: formData.get('isExternalRental'),
@@ -77,7 +128,7 @@ export async function updateEquipment(id: string, formData: FormData) {
   const stockRaw = formData.get('stockQty');
   const parsed = equipmentSchema.safeParse({
     name: formData.get('name'),
-    category: formData.get('category') || undefined,
+    categoryId: formData.get('categoryId') || undefined,
     dailyRate: formData.get('dailyRate'),
     stockQty: stockRaw === '' || stockRaw === null ? '' : stockRaw,
     isExternalRental: formData.get('isExternalRental'),
