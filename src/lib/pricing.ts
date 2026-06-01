@@ -41,6 +41,7 @@ export type ProjectLineRecord = {
     category: string | null;
     dailyRate: number;
     stockQty: number | null;
+    isExternalRental: boolean;
   } | null;
 };
 
@@ -49,6 +50,14 @@ export type LineWithEquipment = ProjectLineRecord;
 
 export function isCustomProjectLine(line: ProjectLineRecord): boolean {
   return line.customName != null && line.customName.trim() !== '';
+}
+
+export function isExternalRentalLine(line: ProjectLineRecord): boolean {
+  return line.equipment?.isExternalRental === true;
+}
+
+export function externalRentalLines(lines: ProjectLineRecord[]): ProjectLineRecord[] {
+  return lines.filter(isExternalRentalLine);
 }
 
 export function projectLineName(line: ProjectLineRecord): string {

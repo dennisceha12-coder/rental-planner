@@ -123,14 +123,15 @@ model CrewShiftStaff {
 }
 
 model Equipment {
-  id        String        @id @default(cuid())
-  name      String
-  category  String?
-  dailyRate Float
-  stockQty  Int?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  lines     ProjectLine[]
+  id               String        @id @default(cuid())
+  name             String
+  category         String?
+  dailyRate        Float
+  stockQty         Int?
+  isExternalRental Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  lines            ProjectLine[]
 }
 
 model ProjectLine {

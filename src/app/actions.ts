@@ -27,6 +27,7 @@ function revalidateAll(projectId?: string) {
     revalidatePath(`/print/${projectId}/offerte`);
     revalidatePath(`/print/${projectId}/callsheet`);
     revalidatePath(`/print/${projectId}/materiaallijst`);
+    revalidatePath(`/print/${projectId}/inhuur`);
     revalidatePath(`/print/${projectId}/personeel`);
   }
 }
@@ -57,6 +58,7 @@ export async function createEquipment(formData: FormData) {
     category: formData.get('category') || undefined,
     dailyRate: formData.get('dailyRate'),
     stockQty: stockRaw === '' || stockRaw === null ? '' : stockRaw,
+    isExternalRental: formData.get('isExternalRental'),
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -78,6 +80,7 @@ export async function updateEquipment(id: string, formData: FormData) {
     category: formData.get('category') || undefined,
     dailyRate: formData.get('dailyRate'),
     stockQty: stockRaw === '' || stockRaw === null ? '' : stockRaw,
+    isExternalRental: formData.get('isExternalRental'),
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 

@@ -32,6 +32,7 @@ export default async function CatalogPage() {
                   <th className="px-4 py-2 font-medium">Categorie</th>
                   <th className="px-4 py-2 font-medium">Dagtarief</th>
                   <th className="px-4 py-2 font-medium">Voorraad</th>
+                  <th className="px-4 py-2 font-medium">Inhuur</th>
                   <th className="px-4 py-2 font-medium" />
                 </tr>
               </thead>
@@ -42,6 +43,15 @@ export default async function CatalogPage() {
                     <td className="px-4 py-3 text-zinc-600">{item.category ?? '—'}</td>
                     <td className="px-4 py-3 tabular-nums">{formatEur(item.dailyRate)}</td>
                     <td className="px-4 py-3">{item.stockQty ?? '∞'}</td>
+                    <td className="px-4 py-3 text-zinc-600">
+                      {item.isExternalRental ? (
+                        <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                          Extern
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <details className="group">
                         <summary className="cursor-pointer text-zinc-600 hover:text-zinc-900">

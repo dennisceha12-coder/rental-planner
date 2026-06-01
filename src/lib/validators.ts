@@ -34,6 +34,10 @@ export const equipmentSchema = z.object({
   category: z.string().optional(),
   dailyRate: z.coerce.number().positive('Dagtarief moet positief zijn'),
   stockQty: z.coerce.number().int().positive().optional().or(z.literal('')),
+  isExternalRental: z
+    .union([z.literal('on'), z.boolean()])
+    .optional()
+    .transform((v) => v === 'on' || v === true),
 });
 
 export const discountTypeSchema = z.enum(['PERCENTAGE', 'AMOUNT']);

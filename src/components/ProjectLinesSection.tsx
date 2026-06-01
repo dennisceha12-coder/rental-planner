@@ -11,6 +11,7 @@ import {
   projectLineCategory,
   projectLineDailyRate,
   isCustomProjectLine,
+  isExternalRentalLine,
   type ProjectLineRecord,
 } from '@/lib/pricing';
 import { toDateInputValue } from '@/lib/dates';
@@ -52,7 +53,8 @@ function LineForm({
             <option value="">Kies…</option>
             {equipment!.map((e) => (
               <option key={e.id} value={e.id}>
-                {e.name} ({formatEur(e.dailyRate)}/dag)
+                {e.name}
+                {e.isExternalRental ? ' (inhuur)' : ''} ({formatEur(e.dailyRate)}/dag)
               </option>
             ))}
           </select>
@@ -143,7 +145,11 @@ export default function ProjectLinesSection({
   const total = projectMaterialTotal(lines);
 
   const stockWarnings = [
-    ...new Set(lines.filter((l) => l.equipmentId).map((l) => l.equipmentId!)),
+    ...new Set(
+      lines
+        .filter((l) => l.equipmentId && !isExternalRentalLine(l))
+        .map((l) => l.equipmentId!)
+    ),
   ]
     .map((equipmentId) => {
       const sample = lines.find((l) => l.equipmentId === equipmentId)!;
@@ -232,6 +238,9 @@ export default function ProjectLinesSection({
                         <div className="text-xs text-zinc-500">
                           {formatEur(projectLineDailyRate(line))}/dag
                         </div>
+                      )}
+                      {isExternalRentalLine(line) && (
+                        <div className="text-xs text-amber-700">Extern inhuur</div>
                       )}
                     </td>
                     <td className="px-4 py-3">{line.quantity}</td>

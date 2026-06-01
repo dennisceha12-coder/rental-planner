@@ -7,6 +7,7 @@ export default function PrintActions({ projectId }: { projectId: string }) {
     { href: `${base}/offerte`, label: 'Offerte' },
     { href: `${base}/callsheet`, label: 'Callsheet' },
     { href: `${base}/materiaallijst`, label: 'Materiaallijst' },
+    { href: `${base}/inhuur`, label: 'Inhuurlijst' },
   ];
 
   return (

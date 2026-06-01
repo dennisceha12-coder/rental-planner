@@ -9,6 +9,7 @@ type Equipment = {
   category: string | null;
   dailyRate: number;
   stockQty: number | null;
+  isExternalRental: boolean;
 };
 
 export default function EquipmentForm({ equipment }: { equipment?: Equipment }) {
@@ -68,6 +69,18 @@ export default function EquipmentForm({ equipment }: { equipment?: Equipment }) 
           className="rounded border border-zinc-300 px-3 py-2"
         />
       </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="isExternalRental"
+          defaultChecked={equipment?.isExternalRental ?? false}
+          className="rounded border-zinc-300"
+        />
+        Extern inhuur
+      </label>
+      <p className="text-xs text-zinc-500">
+        Inhuurmateriaal verschijnt op de aparte inhuurlijst bij documenten.
+      </p>
       <button
         type="submit"
         disabled={pending}
