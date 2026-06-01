@@ -38,6 +38,13 @@ export const equipmentSchema = z.object({
 
 export const discountTypeSchema = z.enum(['PERCENTAGE', 'AMOUNT']);
 
+export const transportTypeSchema = z.enum(['PER_KM', 'FIXED']);
+
+export const TRANSPORT_TYPE_LABELS: Record<z.infer<typeof transportTypeSchema>, string> = {
+  PER_KM: 'Kilometervergoeding',
+  FIXED: 'Vast tarief',
+};
+
 export const projectSchema = z
   .object({
     title: z.string().min(1, 'Titel is verplicht'),
@@ -55,8 +62,13 @@ export const projectSchema = z
     parkingNotes: z.string().optional(),
     notes: z.string().optional(),
     hourlyRate: optionalNonNegativeNumber,
+    transportType: z
+      .string()
+      .optional()
+      .transform((v) => (v === 'FIXED' ? 'FIXED' : 'PER_KM')),
     transportKm: optionalNonNegativeNumber,
     transportRatePerKm: optionalNonNegativeNumber,
+    transportFixedAmount: optionalNonNegativeNumber,
     discountType: z
       .string()
       .optional()
@@ -89,10 +101,24 @@ export const projectSchema = z
         path: ['discountType'],
       });
     }
+    if (data.transportType === 'PER_KM') {
+      const hasKm = data.transportKm != null && data.transportKm > 0;
+      const hasRate = data.transportRatePerKm != null && data.transportRatePerKm > 0;
+      if (hasKm !== hasRate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Vul zowel afstand als vergoeding per km in',
+          path: hasKm ? ['transportRatePerKm'] : ['transportKm'],
+        });
+      }
+    }
   })
   .transform((data) => ({
     ...data,
     discountValue: data.discountType ? data.discountValue : null,
+    transportKm: data.transportType === 'PER_KM' ? data.transportKm : null,
+    transportRatePerKm: data.transportType === 'PER_KM' ? data.transportRatePerKm : null,
+    transportFixedAmount: data.transportType === 'FIXED' ? data.transportFixedAmount : null,
   }));
 
 export const crewPhaseSchema = z.enum(['OPBOUW', 'SHOW', 'AFBOUW']);

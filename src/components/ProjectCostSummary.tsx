@@ -2,6 +2,7 @@ import { formatEur } from '@/lib/pricing';
 import {
   computeProjectTotals,
   formatDiscountLabel,
+  formatTransportLabel,
   type ProjectCostFields,
 } from '@/lib/project-totals';
 import { crewPhaseSummaries } from '@/lib/crew';
@@ -16,6 +17,7 @@ export default function ProjectCostSummary({
 }) {
   const t = computeProjectTotals(lines, costs);
   const crewPhases = crewPhaseSummaries(costs.crewShifts, costs.hourlyRate);
+  const transportLabel = formatTransportLabel(costs);
   const hasExtras = t.labor > 0 || t.transport > 0;
 
   return (
@@ -37,7 +39,12 @@ export default function ProjectCostSummary({
         ))}
         {t.transport > 0 && (
           <div className="flex justify-between gap-4 text-zinc-600">
-            <dt>Transport</dt>
+            <dt>
+              Transport
+              {transportLabel && (
+                <span className="text-zinc-400"> ({transportLabel})</span>
+              )}
+            </dt>
             <dd className="tabular-nums">{formatEur(t.transport)}</dd>
           </div>
         )}

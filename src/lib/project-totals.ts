@@ -11,7 +11,7 @@ import {
   effectiveHeadcount,
   type CrewShiftInput,
 } from '@/lib/crew';
-import type { CrewPhase } from '@/generated/prisma/client';
+import type { CrewPhase, TransportType } from '@/generated/prisma/client';
 
 export type DiscountType = 'PERCENTAGE' | 'AMOUNT';
 
@@ -20,12 +20,18 @@ export type ProjectDiscount = {
   discountValue: number | null;
 };
 
-export type ProjectCostFields = {
-  hourlyRate: number | null;
+export type ProjectTransport = {
+  transportType: TransportType;
   transportKm: number | null;
   transportRatePerKm: number | null;
+  transportFixedAmount: number | null;
+};
+
+export type ProjectCostFields = {
+  hourlyRate: number | null;
   crewShifts: CrewShiftInput[];
-} & ProjectDiscount;
+} & ProjectDiscount &
+  ProjectTransport;
 
 export type ProjectTotals = {
   material: number;
@@ -70,12 +76,40 @@ export function formatDiscountLabel(discount: ProjectDiscount): string {
   return 'vast bedrag';
 }
 
-export function transportTotal(
-  km: number | null,
-  ratePerKm: number | null
-): number {
-  if (km == null || km <= 0 || ratePerKm == null || ratePerKm <= 0) return 0;
-  return km * ratePerKm;
+export function transportTotal(transport: ProjectTransport): number {
+  if (transport.transportType === 'FIXED') {
+    if (
+      transport.transportFixedAmount == null ||
+      transport.transportFixedAmount <= 0
+    ) {
+      return 0;
+    }
+    return transport.transportFixedAmount;
+  }
+  if (
+    transport.transportKm == null ||
+    transport.transportKm <= 0 ||
+    transport.transportRatePerKm == null ||
+    transport.transportRatePerKm <= 0
+  ) {
+    return 0;
+  }
+  return transport.transportKm * transport.transportRatePerKm;
+}
+
+export function formatTransportLabel(transport: ProjectTransport): string {
+  if (transport.transportType === 'FIXED') {
+    return 'vast tarief';
+  }
+  if (
+    transport.transportKm != null &&
+    transport.transportKm > 0 &&
+    transport.transportRatePerKm != null &&
+    transport.transportRatePerKm > 0
+  ) {
+    return `${transport.transportKm} km × €${transport.transportRatePerKm.toFixed(2)}`;
+  }
+  return '';
 }
 
 export function computeProjectTotals(
@@ -85,7 +119,7 @@ export function computeProjectTotals(
   const material = projectMaterialTotal(lines);
   const laborByPhase = crewCostByPhase(costs.crewShifts, costs.hourlyRate);
   const labor = crewTotalCost(costs.crewShifts, costs.hourlyRate);
-  const transport = transportTotal(costs.transportKm, costs.transportRatePerKm);
+  const transport = transportTotal(costs);
   const subtotalBeforeDiscount = material + labor + transport;
   const discountAmount = computeDiscountAmount(subtotalBeforeDiscount, costs);
   return {
@@ -133,36 +167,48 @@ export function quoteCrewLines(
 
 export function quoteExtraLines(costs: ProjectCostFields): QuoteExtraLine[] {
   const lines = quoteCrewLines(costs.crewShifts, costs.hourlyRate);
-  if (
-    costs.transportKm != null &&
-    costs.transportKm > 0 &&
-    costs.transportRatePerKm != null &&
-    costs.transportRatePerKm > 0
-  ) {
-    lines.push({
-      key: 'transport',
-      label: 'Transport',
-      quantity: costs.transportKm,
-      unit: 'km',
-      unitRate: costs.transportRatePerKm,
-      total: transportTotal(costs.transportKm, costs.transportRatePerKm),
-    });
+  const transportAmount = transportTotal(costs);
+
+  if (transportAmount > 0) {
+    if (costs.transportType === 'FIXED') {
+      lines.push({
+        key: 'transport',
+        label: 'Transport',
+        quantity: 1,
+        unit: 'vast',
+        unitRate: transportAmount,
+        total: transportAmount,
+      });
+    } else {
+      lines.push({
+        key: 'transport',
+        label: 'Transport',
+        quantity: costs.transportKm!,
+        unit: 'km',
+        unitRate: costs.transportRatePerKm!,
+        total: transportAmount,
+      });
+    }
   }
   return lines;
 }
 
 export function projectToCostFields(project: {
   hourlyRate: number | null;
+  transportType: TransportType;
   transportKm: number | null;
   transportRatePerKm: number | null;
+  transportFixedAmount: number | null;
   discountType: DiscountType | null;
   discountValue: number | null;
   crewShifts: Parameters<typeof mapCrewShiftFromDb>[0][];
 }): ProjectCostFields {
   return {
     hourlyRate: project.hourlyRate,
+    transportType: project.transportType,
     transportKm: project.transportKm,
     transportRatePerKm: project.transportRatePerKm,
+    transportFixedAmount: project.transportFixedAmount,
     discountType: project.discountType,
     discountValue: project.discountValue,
     crewShifts: project.crewShifts.map(mapCrewShiftFromDb),

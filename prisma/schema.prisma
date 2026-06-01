@@ -25,6 +25,11 @@ enum DiscountType {
   AMOUNT
 }
 
+enum TransportType {
+  PER_KM
+  FIXED
+}
+
 model CompanySettings {
   id                String @id @default("default")
   companyName       String @default("")
@@ -68,9 +73,11 @@ model Project {
   siteContact  String?
   parkingNotes String?
   notes        String?
-  hourlyRate       Float?
-  transportKm      Float?
-  transportRatePerKm Float?
+  hourlyRate           Float?
+  transportType        TransportType @default(PER_KM)
+  transportKm          Float?
+  transportRatePerKm   Float?
+  transportFixedAmount Float?
   discountType     DiscountType?
   discountValue    Float?
   createdAt    DateTime      @default(now())

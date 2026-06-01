@@ -138,8 +138,10 @@ export async function createProject(formData: FormData) {
     parkingNotes: formData.get('parkingNotes') || undefined,
     notes: formData.get('notes') || undefined,
     hourlyRate: formData.get('hourlyRate') ?? '',
+    transportType: formData.get('transportType') ?? 'PER_KM',
     transportKm: formData.get('transportKm') ?? '',
     transportRatePerKm: formData.get('transportRatePerKm') ?? '',
+    transportFixedAmount: formData.get('transportFixedAmount') ?? '',
     discountType: formData.get('discountType') ?? '',
     discountValue: formData.get('discountValue') ?? '',
   });
@@ -175,8 +177,10 @@ export async function updateProject(id: string, formData: FormData) {
     parkingNotes: formData.get('parkingNotes') || undefined,
     notes: formData.get('notes') || undefined,
     hourlyRate: formData.get('hourlyRate') ?? '',
+    transportType: formData.get('transportType') ?? 'PER_KM',
     transportKm: formData.get('transportKm') ?? '',
     transportRatePerKm: formData.get('transportRatePerKm') ?? '',
+    transportFixedAmount: formData.get('transportFixedAmount') ?? '',
     discountType: formData.get('discountType') ?? '',
     discountValue: formData.get('discountValue') ?? '',
   });
