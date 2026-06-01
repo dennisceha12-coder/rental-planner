@@ -3,6 +3,8 @@ import { formatEur } from '@/lib/pricing';
 import EquipmentForm from '@/components/EquipmentForm';
 import DeleteEquipmentButton from '@/components/DeleteEquipmentButton';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CatalogPage() {
   const equipment = await prisma.equipment.findMany({
     orderBy: [{ category: 'asc' }, { name: 'asc' }],

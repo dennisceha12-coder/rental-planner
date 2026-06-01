@@ -2,6 +2,8 @@ import { prisma } from '@/lib/db';
 import { generateQuoteNumber } from '@/lib/quotes';
 import ProjectForm from '@/components/ProjectForm';
 
+export const dynamic = 'force-dynamic';
+
 export default async function NewProjectPage() {
   const [clients, quoteNumber] = await Promise.all([
     prisma.client.findMany({ orderBy: { name: 'asc' } }),

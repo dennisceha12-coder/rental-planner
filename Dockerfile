@@ -4,14 +4,16 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci --ignore-scripts && npm rebuild better-sqlite3
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ENV DATABASE_URL="file:./dev.db"
-RUN npx prisma generate
-RUN npm run build
+# Build-time DB only — Railway's runtime DATABASE_URL (file:/data/dev.db) must not
+# be used here; /data does not exist during the Docker build.
+RUN DATABASE_URL="file:./.build.db" npx prisma generate \
+ && DATABASE_URL="file:./.build.db" npx prisma migrate deploy \
+ && DATABASE_URL="file:./.build.db" npm run build
 
 FROM base AS runner
 ENV NODE_ENV=production

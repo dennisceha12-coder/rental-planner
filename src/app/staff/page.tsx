@@ -2,6 +2,8 @@ import { prisma } from '@/lib/db';
 import StaffForm from '@/components/StaffForm';
 import DeleteStaffButton from '@/components/DeleteStaffButton';
 
+export const dynamic = 'force-dynamic';
+
 export default async function StaffPage() {
   const staff = await prisma.staff.findMany({ orderBy: { name: 'asc' } });
 

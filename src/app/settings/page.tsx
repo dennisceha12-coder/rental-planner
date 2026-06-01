@@ -1,6 +1,8 @@
 import { getCompanySettings, isCompanyConfigured } from '@/lib/company-settings';
 import CompanySettingsForm from '@/components/CompanySettingsForm';
 
+export const dynamic = 'force-dynamic';
+
 export default async function SettingsPage() {
   const settings = await getCompanySettings();
   const configured = isCompanyConfigured(settings);
