@@ -1,7 +1,13 @@
 'use client';
 
-import { useTransition } from 'react';
-import { addProjectLine, deleteProjectLine, updateProjectLineDiscount } from '@/app/actions';
+import { useState, useTransition } from 'react';
+import {
+  addProjectLine,
+  deleteProjectLine,
+  updateProjectLine,
+  updateProjectLineDiscount,
+} from '@/app/actions';
+import FormErrors from '@/components/FormErrors';
 import {
   lineBreakdown,
   projectMaterialTotal,
@@ -17,6 +23,7 @@ import {
 } from '@/lib/pricing';
 import { toDateInputValue } from '@/lib/dates';
 import { groupEquipmentByCategory } from '@/lib/equipment-categories';
+import type { FieldErrors } from '@/lib/form-errors';
 
 type CatalogEquipment = {
   id: string;
@@ -62,6 +69,16 @@ function DiscountFields({
   );
 }
 
+function filterEquipment(equipment: CatalogEquipment[], query: string): CatalogEquipment[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return equipment;
+  return equipment.filter(
+    (e) =>
+      e.name.toLowerCase().includes(q) ||
+      e.category?.name.toLowerCase().includes(q)
+  );
+}
+
 function LineForm({
   projectId,
   lineType,
@@ -69,7 +86,10 @@ function LineForm({
   defaultStart,
   defaultEnd,
   pending,
+  catalogQuery,
+  onCatalogQueryChange,
   onSubmit,
+  errors,
 }: {
   projectId: string;
   lineType: 'catalog' | 'custom';
@@ -77,36 +97,50 @@ function LineForm({
   defaultStart?: string;
   defaultEnd?: string;
   pending: boolean;
+  catalogQuery?: string;
+  onCatalogQueryChange?: (q: string) => void;
   onSubmit: (fd: FormData) => void;
+  errors?: FieldErrors;
 }) {
   const isCatalog = lineType === 'catalog';
+  const filtered = equipment ? filterEquipment(equipment, catalogQuery ?? '') : [];
 
   return (
-    <form
-      action={onSubmit}
-      className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4"
-    >
+    <form action={onSubmit} className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
       <input type="hidden" name="projectId" value={projectId} />
       <input type="hidden" name="lineType" value={lineType} />
+      <FormErrors errors={errors} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {isCatalog ? (
-          <label className="grid gap-1 text-sm sm:col-span-2">
-            Materiaal
-            <select name="equipmentId" required className="rounded border border-zinc-300 px-3 py-2">
-              <option value="">Kies…</option>
-              {groupEquipmentByCategory(equipment!).map((group) => (
-                <optgroup key={group.key} label={group.name}>
-                  {group.items.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {e.name}
-                      {e.isExternalRental ? ' (inhuur)' : ''} ({formatEur(e.dailyRate)}/dag)
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
+          <div className="grid gap-1 text-sm sm:col-span-2">
+            <label>
+              Zoek materiaal
+              <input
+                type="search"
+                value={catalogQuery ?? ''}
+                onChange={(e) => onCatalogQueryChange?.(e.target.value)}
+                placeholder="Filter op naam of categorie…"
+                className="mt-1 w-full rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="mt-2 grid gap-1">
+              Materiaal *
+              <select name="equipmentId" required className="rounded border border-zinc-300 px-3 py-2">
+                <option value="">Kies…</option>
+                {groupEquipmentByCategory(filtered).map((group) => (
+                  <optgroup key={group.key} label={group.name}>
+                    {group.items.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.name}
+                        {e.isExternalRental ? ' (inhuur)' : ''} ({formatEur(e.dailyRate)}/dag)
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          </div>
         ) : (
           <>
             <label className="grid gap-1 text-sm sm:col-span-2">
@@ -184,18 +218,109 @@ function LineForm({
   );
 }
 
-function LineDiscountForm({
+function LineEditForm({
   line,
   pending,
   onSubmit,
+  errors,
 }: {
   line: Line;
   pending: boolean;
   onSubmit: (fd: FormData) => void;
+  errors?: FieldErrors;
+}) {
+  const isCustom = isCustomProjectLine(line);
+
+  return (
+    <form action={onSubmit} className="mt-2 space-y-2 rounded border border-zinc-200 bg-zinc-50 p-3">
+      <input type="hidden" name="projectId" value={line.projectId} />
+      <input type="hidden" name="lineType" value={isCustom ? 'custom' : 'catalog'} />
+      {line.equipmentId && <input type="hidden" name="equipmentId" value={line.equipmentId} />}
+      <FormErrors errors={errors} />
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {isCustom && (
+          <>
+            <label className="grid gap-1 text-xs sm:col-span-2">
+              Omschrijving
+              <input
+                name="customName"
+                required
+                defaultValue={line.customName ?? ''}
+                className="rounded border border-zinc-300 px-2 py-1"
+              />
+            </label>
+            <label className="grid gap-1 text-xs">
+              Dagtarief (€)
+              <input
+                name="customDailyRate"
+                type="number"
+                min={0.01}
+                step={0.01}
+                required
+                defaultValue={line.customDailyRate ?? ''}
+                className="rounded border border-zinc-300 px-2 py-1"
+              />
+            </label>
+          </>
+        )}
+        <label className="grid gap-1 text-xs">
+          Aantal
+          <input
+            name="quantity"
+            type="number"
+            min={1}
+            required
+            defaultValue={line.quantity}
+            className="rounded border border-zinc-300 px-2 py-1"
+          />
+        </label>
+        <label className="grid gap-1 text-xs">
+          Van
+          <input
+            name="rentalStart"
+            type="date"
+            required
+            defaultValue={toDateInputValue(line.rentalStart)}
+            className="rounded border border-zinc-300 px-2 py-1"
+          />
+        </label>
+        <label className="grid gap-1 text-xs">
+          Tot
+          <input
+            name="rentalEnd"
+            type="date"
+            required
+            defaultValue={toDateInputValue(line.rentalEnd)}
+            className="rounded border border-zinc-300 px-2 py-1"
+          />
+        </label>
+      </div>
+      <button
+        type="submit"
+        disabled={pending}
+        className="text-xs font-medium text-zinc-900 hover:underline disabled:opacity-50"
+      >
+        Regel opslaan
+      </button>
+    </form>
+  );
+}
+
+function LineDiscountForm({
+  line,
+  pending,
+  onSubmit,
+  errors,
+}: {
+  line: Line;
+  pending: boolean;
+  onSubmit: (fd: FormData) => void;
+  errors?: FieldErrors;
 }) {
   return (
     <form action={onSubmit} className="flex min-w-[9rem] flex-col gap-1">
       <input type="hidden" name="projectId" value={line.projectId} />
+      <FormErrors errors={errors} />
       <DiscountFields
         discountType={line.discountType}
         discountValue={line.discountValue}
@@ -226,6 +351,8 @@ export default function ProjectLinesSection({
   defaultEnd?: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const [catalogQuery, setCatalogQuery] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, FieldErrors | undefined>>({});
   const total = projectMaterialTotal(lines);
 
   const stockWarnings = [
@@ -244,15 +371,42 @@ export default function ProjectLinesSection({
     })
     .filter(Boolean) as string[];
 
-  const submitLine = (fd: FormData) => {
+  const submitLine = (key: string, fd: FormData) => {
     startTransition(() => {
-      void addProjectLine(fd);
+      void (async () => {
+        const result = await addProjectLine(fd);
+        if (result?.error) {
+          setFormErrors((prev) => ({ ...prev, [key]: result.error }));
+          return;
+        }
+        setFormErrors((prev) => ({ ...prev, [key]: undefined }));
+      })();
+    });
+  };
+
+  const submitLineEdit = (lineId: string, fd: FormData) => {
+    startTransition(() => {
+      void (async () => {
+        const result = await updateProjectLine(lineId, fd);
+        if (result?.error) {
+          setFormErrors((prev) => ({ ...prev, [`edit-${lineId}`]: result.error }));
+          return;
+        }
+        setFormErrors((prev) => ({ ...prev, [`edit-${lineId}`]: undefined }));
+      })();
     });
   };
 
   const submitLineDiscount = (lineId: string, fd: FormData) => {
     startTransition(() => {
-      void updateProjectLineDiscount(lineId, fd);
+      void (async () => {
+        const result = await updateProjectLineDiscount(lineId, fd);
+        if (result?.error) {
+          setFormErrors((prev) => ({ ...prev, [`discount-${lineId}`]: result.error }));
+          return;
+        }
+        setFormErrors((prev) => ({ ...prev, [`discount-${lineId}`]: undefined }));
+      })();
     });
   };
 
@@ -278,7 +432,10 @@ export default function ProjectLinesSection({
           defaultStart={defaultStart}
           defaultEnd={defaultEnd}
           pending={pending}
-          onSubmit={submitLine}
+          catalogQuery={catalogQuery}
+          onCatalogQueryChange={setCatalogQuery}
+          onSubmit={(fd) => submitLine('catalog', fd)}
+          errors={formErrors.catalog}
         />
       </div>
 
@@ -294,7 +451,8 @@ export default function ProjectLinesSection({
           defaultStart={defaultStart}
           defaultEnd={defaultEnd}
           pending={pending}
-          onSubmit={submitLine}
+          onSubmit={(fd) => submitLine('custom', fd)}
+          errors={formErrors.custom}
         />
       </div>
 
@@ -302,7 +460,7 @@ export default function ProjectLinesSection({
         <p className="text-sm text-zinc-500">Nog geen materiaal op dit project.</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-          <table className="w-full min-w-[860px] text-left text-sm">
+          <table className="w-full min-w-[920px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
               <tr>
                 <th className="px-4 py-2">Materiaal</th>
@@ -323,9 +481,7 @@ export default function ProjectLinesSection({
                   <tr key={line.id}>
                     <td className="px-4 py-3">
                       <div className="font-medium">{projectLineName(line)}</div>
-                      {category && (
-                        <div className="text-xs text-zinc-500">{category}</div>
-                      )}
+                      {category && <div className="text-xs text-zinc-500">{category}</div>}
                       {isCustomProjectLine(line) && (
                         <div className="text-xs text-zinc-500">
                           {formatEur(projectLineDailyRate(line))}/dag
@@ -334,6 +490,15 @@ export default function ProjectLinesSection({
                       {isExternalRentalLine(line) && (
                         <div className="text-xs text-amber-700">Extern inhuur</div>
                       )}
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs text-zinc-600">Bewerken</summary>
+                        <LineEditForm
+                          line={line}
+                          pending={pending}
+                          onSubmit={(fd) => submitLineEdit(line.id, fd)}
+                          errors={formErrors[`edit-${line.id}`]}
+                        />
+                      </details>
                     </td>
                     <td className="px-4 py-3">{line.quantity}</td>
                     <td className="px-4 py-3 text-zinc-600">
@@ -345,6 +510,7 @@ export default function ProjectLinesSection({
                         line={line}
                         pending={pending}
                         onSubmit={(fd) => submitLineDiscount(line.id, fd)}
+                        errors={formErrors[`discount-${line.id}`]}
                       />
                       {discount > 0 && discountLabel && (
                         <div className="mt-1 text-xs text-red-700">

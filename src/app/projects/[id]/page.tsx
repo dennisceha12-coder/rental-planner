@@ -13,6 +13,8 @@ import ProjectFinancialOverview from '@/components/ProjectFinancialOverview';
 import CrewPlanningSection from '@/components/CrewPlanningSection';
 import { projectToCostFields } from '@/lib/project-totals';
 import { mapCrewShiftFromDb } from '@/lib/crew';
+import { getCompanySettings } from '@/lib/company-settings';
+import DuplicateProjectButton from '@/components/DuplicateProjectButton';
 import DeleteProjectButton from '@/components/DeleteProjectButton';
 
 export default async function ProjectPage({
@@ -27,13 +29,14 @@ export default async function ProjectPage({
   const project = await getProjectById(id);
   if (!project) notFound();
 
-  const [clients, equipment, staffList] = await Promise.all([
+  const [clients, equipment, staffList, company] = await Promise.all([
     prisma.client.findMany({ orderBy: { name: 'asc' } }),
     prisma.equipment.findMany({
       include: { category: true },
       orderBy: [{ category: { sortOrder: 'asc' } }, { name: 'asc' }],
     }),
     prisma.staff.findMany({ orderBy: { name: 'asc' } }),
+    getCompanySettings(),
   ]);
 
   const activeTab =
@@ -100,6 +103,7 @@ export default async function ProjectPage({
       {activeTab === 'algemeen' && (
         <div className="space-y-4">
           <ProjectForm clients={clients} project={project} />
+          <DuplicateProjectButton projectId={project.id} />
           <DeleteProjectButton id={project.id} />
         </div>
       )}
@@ -140,6 +144,7 @@ export default async function ProjectPage({
           projectId={project.id}
           lines={project.lines}
           costs={projectToCostFields(project)}
+          defaultVatRate={company.defaultVatRate}
         />
       )}
 

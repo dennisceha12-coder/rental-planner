@@ -1,12 +1,13 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import {
   addCrewShift,
   deleteCrewShift,
   updateCrewShift,
   updateProjectHourlyRate,
 } from '@/app/actions';
+import FormErrors from '@/components/FormErrors';
 import {
   shiftCost,
   shiftDurationHours,
@@ -18,6 +19,7 @@ import {
 import { formatEur } from '@/lib/pricing';
 import { toDateInputValue } from '@/lib/dates';
 import { DEFAULT_HOURLY_RATE } from '@/lib/constants';
+import type { FieldErrors } from '@/lib/form-errors';
 import type { CrewPhase } from '@/generated/prisma/client';
 
 type StaffOption = { id: string; name: string; role: string | null };
@@ -40,6 +42,7 @@ function ShiftForm({
   onDone?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
+  const [errors, setErrors] = useState<FieldErrors | undefined>();
   const phases = Object.keys(CREW_PHASE_LABELS) as CrewPhase[];
   const isEdit = !!shift;
 
@@ -50,17 +53,20 @@ function ShiftForm({
           void (async () => {
             const selected = staff.filter((s) => fd.get(`staff_${s.id}`) === 'on');
             fd.set('staffIds', selected.map((s) => s.id).join(','));
-            if (isEdit && shift) {
-              await updateCrewShift(shift.id, fd);
-            } else {
-              await addCrewShift(fd);
+            const result =
+              isEdit && shift ? await updateCrewShift(shift.id, fd) : await addCrewShift(fd);
+            if (result?.error) {
+              setErrors(result.error);
+              return;
             }
+            setErrors(undefined);
             onDone?.();
           })();
         });
       }}
       className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
     >
+      <FormErrors errors={errors} className="sm:col-span-2 lg:col-span-4" />
       <input type="hidden" name="projectId" value={projectId} />
       <label className="grid gap-1 text-sm">
         Fase
@@ -186,17 +192,23 @@ export default function CrewPlanningSection({
   defaultEndTime?: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const [hourlyErrors, setHourlyErrors] = useState<FieldErrors | undefined>();
 
   return (
     <div className="space-y-6">
       <form
         action={(fd) => {
           startTransition(() => {
-            void updateProjectHourlyRate(projectId, fd);
+            void (async () => {
+              const result = await updateProjectHourlyRate(projectId, fd);
+              if (result?.error) setHourlyErrors(result.error);
+              else setHourlyErrors(undefined);
+            })();
           });
         }}
         className="flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4"
       >
+        <FormErrors errors={hourlyErrors} className="w-full" />
         <label className="grid gap-1 text-sm">
           Standaard uurtarief personeel (EUR)
           <input

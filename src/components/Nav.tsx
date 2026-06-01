@@ -1,7 +1,10 @@
 import Link from 'next/link';
+import { isAuthEnabled } from '@/lib/auth';
+import LogoutButton from '@/components/LogoutButton';
 
 const links = [
   { href: '/', label: 'Projecten' },
+  { href: '/clients', label: 'Klanten' },
   { href: '/catalog', label: 'Catalogus' },
   { href: '/staff', label: 'Team' },
   { href: '/settings', label: 'Bedrijf' },
@@ -25,6 +28,7 @@ export default function Nav() {
               {l.label}
             </Link>
           ))}
+          {isAuthEnabled() && <LogoutButton />}
         </div>
       </div>
     </nav>

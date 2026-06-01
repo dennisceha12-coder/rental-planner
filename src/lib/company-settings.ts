@@ -1,5 +1,8 @@
 import { prisma } from '@/lib/db';
 import type { CompanySettings } from '@/generated/prisma/client';
+import { computeVatTotals } from '@/lib/vat';
+
+export { computeVatTotals };
 
 const DEFAULTS: Omit<CompanySettings, 'id'> = {
   companyName: '',
@@ -32,14 +35,4 @@ export function quoteValidUntil(from: Date, validityDays: number): Date {
   const d = new Date(from);
   d.setDate(d.getDate() + validityDays);
   return d;
-}
-
-export function computeVatTotals(subtotalExclVat: number, vatRatePercent: number) {
-  const vatAmount = subtotalExclVat * (vatRatePercent / 100);
-  return {
-    subtotalExclVat,
-    vatRatePercent,
-    vatAmount,
-    totalInclVat: subtotalExclVat + vatAmount,
-  };
 }

@@ -2,11 +2,13 @@
 
 import { useState, useTransition } from 'react';
 import { createProject, updateProject } from '@/app/actions';
+import FormErrors from '@/components/FormErrors';
 import { STATUS_LABELS, TRANSPORT_TYPE_LABELS } from '@/lib/validators';
 import { toDateInputValue } from '@/lib/dates';
 import {
   DEFAULT_TRANSPORT_RATE_PER_KM,
 } from '@/lib/constants';
+import type { FieldErrors } from '@/lib/form-errors';
 import type { Project, Client, ProjectStatus, TransportType } from '@/generated/prisma/client';
 
 type ProjectWithClient = Project & { client: Client };
@@ -21,6 +23,7 @@ export default function ProjectForm({
   defaultQuoteNumber?: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const [errors, setErrors] = useState<FieldErrors | undefined>();
   const [transportType, setTransportType] = useState<TransportType>(
     project?.transportType ?? 'PER_KM'
   );
@@ -30,9 +33,15 @@ export default function ProjectForm({
     startTransition(() => {
       void (async () => {
         if (isEdit && project) {
-          await updateProject(project.id, formData);
+          const result = await updateProject(project.id, formData);
+          if (result?.error) {
+            setErrors(result.error);
+            return;
+          }
+          setErrors(undefined);
         } else {
-          await createProject(formData);
+          const result = await createProject(formData);
+          if (result?.error) setErrors(result.error);
         }
       })();
     });
@@ -42,6 +51,7 @@ export default function ProjectForm({
 
   return (
     <form action={onSubmit} className="max-w-2xl space-y-6 rounded-lg border border-zinc-200 bg-white p-6">
+      <FormErrors errors={errors} />
       <fieldset className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1 text-sm sm:col-span-2">
           Projecttitel *
@@ -78,21 +88,26 @@ export default function ProjectForm({
         </label>
 
         {isEdit ? (
-          <label className="grid gap-1 text-sm sm:col-span-2">
-            Klant *
-            <select
-              name="clientId"
-              required
-              defaultValue={project.clientId}
-              className="rounded border border-zinc-300 px-3 py-2"
-            >
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="grid gap-1 text-sm sm:col-span-2">
+            <span>Klant *</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                name="clientId"
+                required
+                defaultValue={project.clientId}
+                className="min-w-[12rem] flex-1 rounded border border-zinc-300 px-3 py-2"
+              >
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <a href="/clients" className="text-sm text-zinc-600 underline hover:text-zinc-900">
+                Klant beheren
+              </a>
+            </div>
+          </div>
         ) : (
           <>
             <label className="grid gap-1 text-sm sm:col-span-2">

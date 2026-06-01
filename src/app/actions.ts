@@ -2,9 +2,16 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db';
 import { parseDateInput } from '@/lib/dates';
 import { generateQuoteNumber } from '@/lib/quotes';
+import {
+  AUTH_COOKIE,
+  isAuthEnabled,
+  sessionCookieValue,
+  verifyPassword,
+} from '@/lib/auth';
 import {
   clientSchema,
   equipmentCategorySchema,
@@ -22,7 +29,8 @@ import { getCompanySettings } from '@/lib/company-settings';
 
 function revalidateAll(projectId?: string) {
   revalidatePath('/');
-  revalidatePath('/catalog');
+  revalidatePath('/clients');
+  revalidatePath('/catalog', 'layout');
   revalidatePath('/staff');
   revalidatePath('/settings');
   if (projectId) {
@@ -49,7 +57,32 @@ export async function createClient(formData: FormData) {
 
   const client = await prisma.client.create({ data: parsed.data });
   revalidateAll();
-  return { clientId: client.id };
+  return { ok: true, clientId: client.id };
+}
+
+export async function updateClient(id: string, formData: FormData) {
+  const parsed = clientSchema.safeParse({
+    name: formData.get('name'),
+    email: formData.get('email') || undefined,
+    phone: formData.get('phone') || undefined,
+    address: formData.get('address') || undefined,
+    vatNumber: formData.get('vatNumber') || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  await prisma.client.update({ where: { id }, data: parsed.data });
+  revalidateAll();
+  return { ok: true };
+}
+
+export async function deleteClient(id: string) {
+  const count = await prisma.project.count({ where: { clientId: id } });
+  if (count > 0) {
+    return { error: { name: ['Klant heeft nog gekoppelde projecten'] } };
+  }
+  await prisma.client.delete({ where: { id } });
+  revalidateAll();
+  return { ok: true };
 }
 
 // ——— Equipment categories ———
@@ -70,7 +103,7 @@ export async function createEquipmentCategory(formData: FormData) {
   await prisma.equipmentCategory.create({
     data: { name: parsed.data.name.trim(), sortOrder },
   });
-  revalidatePath('/catalog');
+  revalidatePath('/catalog', 'layout');
   return { ok: true };
 }
 
@@ -85,7 +118,7 @@ export async function updateEquipmentCategory(id: string, formData: FormData) {
   if (parsed.data.sortOrder != null) data.sortOrder = parsed.data.sortOrder;
 
   await prisma.equipmentCategory.update({ where: { id }, data });
-  revalidatePath('/catalog');
+  revalidatePath('/catalog', 'layout');
   revalidateAll();
   return { ok: true };
 }
@@ -98,7 +131,7 @@ export async function deleteEquipmentCategory(id: string) {
     };
   }
   await prisma.equipmentCategory.delete({ where: { id } });
-  revalidatePath('/catalog');
+  revalidatePath('/catalog', 'layout');
   return { ok: true };
 }
 
@@ -122,7 +155,7 @@ export async function createEquipment(formData: FormData) {
       stockQty: stockQty === '' || stockQty === undefined ? null : Number(stockQty),
     },
   });
-  revalidatePath('/catalog');
+  revalidatePath('/catalog', 'layout');
   return { ok: true };
 }
 
@@ -145,7 +178,7 @@ export async function updateEquipment(id: string, formData: FormData) {
       stockQty: stockQty === '' || stockQty === undefined ? null : Number(stockQty),
     },
   });
-  revalidatePath('/catalog');
+  revalidatePath('/catalog', 'layout');
   return { ok: true };
 }
 
@@ -155,7 +188,7 @@ export async function deleteEquipment(id: string) {
     return { error: 'Materiaal is gekoppeld aan projecten en kan niet worden verwijderd.' };
   }
   await prisma.equipment.delete({ where: { id } });
-  revalidatePath('/catalog');
+  revalidatePath('/catalog', 'layout');
   return { ok: true };
 }
 
@@ -258,6 +291,81 @@ export async function deleteProject(id: string) {
   redirect('/');
 }
 
+export async function duplicateProject(id: string) {
+  const source = await prisma.project.findUnique({
+    where: { id },
+    include: {
+      lines: true,
+      crewShifts: { include: { staffAssignments: true } },
+    },
+  });
+  if (!source) return { error: { title: ['Project niet gevonden'] } };
+
+  const quoteNumber = await generateQuoteNumber();
+  const newProject = await prisma.project.create({
+    data: {
+      title: `${source.title} (kopie)`,
+      status: 'CONCEPT',
+      quoteNumber,
+      clientId: source.clientId,
+      location: source.location,
+      loadIn: source.loadIn,
+      showDate: source.showDate,
+      loadOut: source.loadOut,
+      loadInTime: source.loadInTime,
+      showTime: source.showTime,
+      loadOutTime: source.loadOutTime,
+      siteContact: source.siteContact,
+      parkingNotes: source.parkingNotes,
+      notes: source.notes,
+      hourlyRate: source.hourlyRate,
+      transportType: source.transportType,
+      transportKm: source.transportKm,
+      transportRatePerKm: source.transportRatePerKm,
+      transportFixedAmount: source.transportFixedAmount,
+      totalDiscountAmount: source.totalDiscountAmount,
+      lines: {
+        create: source.lines.map((line) => ({
+          equipmentId: line.equipmentId,
+          customName: line.customName,
+          customDailyRate: line.customDailyRate,
+          quantity: line.quantity,
+          rentalStart: line.rentalStart,
+          rentalEnd: line.rentalEnd,
+          discountType: line.discountType,
+          discountValue: line.discountValue,
+        })),
+      },
+    },
+  });
+
+  for (const shift of source.crewShifts) {
+    const newShift = await prisma.crewShift.create({
+      data: {
+        projectId: newProject.id,
+        phase: shift.phase,
+        role: shift.role,
+        headcount: shift.headcount,
+        date: shift.date,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        hourlyRate: shift.hourlyRate,
+      },
+    });
+    if (shift.staffAssignments.length > 0) {
+      await prisma.crewShiftStaff.createMany({
+        data: shift.staffAssignments.map((a) => ({
+          shiftId: newShift.id,
+          staffId: a.staffId,
+        })),
+      });
+    }
+  }
+
+  revalidateAll(newProject.id);
+  redirect(`/projects/${newProject.id}`);
+}
+
 export async function updateProjectFinancial(formData: FormData) {
   const parsed = projectFinancialSchema.safeParse({
     projectId: formData.get('projectId'),
@@ -349,6 +457,9 @@ export async function updateProjectLine(lineId: string, formData: FormData) {
   const end = parseDateInput(parsed.data.rentalEnd);
   if (!start || !end) {
     return { error: { rentalStart: ['Ongeldige datums'] } };
+  }
+  if (end < start) {
+    return { error: { rentalEnd: ['Einddatum moet op of na startdatum liggen'] } };
   }
 
   await prisma.projectLine.update({
@@ -477,14 +588,21 @@ export async function deleteCrewShift(shiftId: string, projectId: string) {
 
 export async function updateProjectHourlyRate(projectId: string, formData: FormData) {
   const hourlyRateRaw = formData.get('hourlyRate');
-  const hourlyRate =
-    hourlyRateRaw === '' || hourlyRateRaw === null
-      ? null
-      : Number(hourlyRateRaw);
-  await prisma.project.update({
-    where: { id: projectId },
-    data: { hourlyRate: hourlyRate != null && Number.isFinite(hourlyRate) ? hourlyRate : null },
-  });
+  if (hourlyRateRaw !== '' && hourlyRateRaw !== null) {
+    const hourlyRate = Number(hourlyRateRaw);
+    if (!Number.isFinite(hourlyRate) || hourlyRate < 0) {
+      return { error: { hourlyRate: ['Voer een geldig uurtarief in'] } };
+    }
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { hourlyRate },
+    });
+  } else {
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { hourlyRate: null },
+    });
+  }
   revalidateAll(projectId);
   return { ok: true };
 }
@@ -553,4 +671,32 @@ export async function deleteStaff(id: string) {
   await prisma.staff.delete({ where: { id } });
   revalidatePath('/staff');
   return { ok: true };
+}
+
+// ——— Auth ———
+
+export async function loginAction(formData: FormData) {
+  if (!isAuthEnabled()) redirect('/');
+
+  const password = String(formData.get('password') ?? '');
+  if (!verifyPassword(password)) {
+    return { error: { password: ['Onjuist wachtwoord'] } };
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(AUTH_COOKIE, sessionCookieValue(), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+  });
+
+  const from = String(formData.get('from') ?? '/');
+  redirect(from.startsWith('/') ? from : '/');
+}
+
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete(AUTH_COOKIE);
+  redirect('/login');
 }

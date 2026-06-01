@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { listProjects } from '@/lib/project-queries';
 import StatusBadge from '@/components/StatusBadge';
+import ProjectSearchForm from '@/components/ProjectSearchForm';
 import { STATUS_LABELS } from '@/lib/validators';
 import { computeProjectTotals, projectToCostFields } from '@/lib/project-totals';
 import { formatEur } from '@/lib/pricing';
@@ -9,10 +10,10 @@ import type { ProjectStatus } from '@/generated/prisma/client';
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; q?: string }>;
 }) {
-  const { status } = await searchParams;
-  const projects = await listProjects(status);
+  const { status, q } = await searchParams;
+  const projects = await listProjects(status, q);
   const statuses = Object.keys(STATUS_LABELS) as ProjectStatus[];
 
   return (
@@ -27,12 +28,14 @@ export default async function HomePage({
         </Link>
       </div>
 
+      <ProjectSearchForm defaultQuery={q ?? ''} />
+
       <div className="flex flex-wrap gap-2">
-        <FilterLink href="/" label="Alle" active={!status} />
+        <FilterLink href={q ? `/?q=${encodeURIComponent(q)}` : '/'} label="Alle" active={!status} />
         {statuses.map((s) => (
           <FilterLink
             key={s}
-            href={`/?status=${s}`}
+            href={`/?status=${s}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
             label={STATUS_LABELS[s]}
             active={status === s}
           />
@@ -41,10 +44,16 @@ export default async function HomePage({
 
       {projects.length === 0 ? (
         <p className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center text-zinc-500">
-          Nog geen projecten.{' '}
-          <Link href="/projects/new" className="font-medium text-zinc-900 underline">
-            Maak het eerste project aan
-          </Link>
+          {q ? (
+            <>Geen projecten gevonden voor &ldquo;{q}&rdquo;.</>
+          ) : (
+            <>
+              Nog geen projecten.{' '}
+              <Link href="/projects/new" className="font-medium text-zinc-900 underline">
+                Maak het eerste project aan
+              </Link>
+            </>
+          )}
         </p>
       ) : (
         <ul className="divide-y divide-zinc-200 overflow-hidden rounded-lg border border-zinc-200 bg-white">

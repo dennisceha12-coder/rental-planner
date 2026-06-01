@@ -1,40 +1,64 @@
 'use client';
 
-import { useTransition } from 'react';
+import Link from 'next/link';
+import { useTransition, useState } from 'react';
 import { updateProjectFinancial } from '@/app/actions';
 import { formatEur } from '@/lib/pricing';
+import { computeVatTotals } from '@/lib/vat';
 import {
   computeProjectTotals,
   formatTransportLabel,
   type ProjectCostFields,
 } from '@/lib/project-totals';
 import { crewPhaseSummaries } from '@/lib/crew';
+import FormErrors from '@/components/FormErrors';
+import type { FieldErrors } from '@/lib/form-errors';
 import type { LineWithEquipment } from '@/lib/pricing';
 
 export default function ProjectFinancialOverview({
   projectId,
   lines,
   costs,
+  defaultVatRate,
 }: {
   projectId: string;
   lines: LineWithEquipment[];
   costs: ProjectCostFields;
+  defaultVatRate: number;
 }) {
   const [pending, startTransition] = useTransition();
+  const [errors, setErrors] = useState<FieldErrors | undefined>();
   const t = computeProjectTotals(lines, costs);
+  const vat = computeVatTotals(t.grandTotal, defaultVatRate);
   const crewPhases = crewPhaseSummaries(costs.crewShifts, costs.hourlyRate);
   const transportLabel = formatTransportLabel(costs);
 
   const submitTotalDiscount = (fd: FormData) => {
     startTransition(() => {
-      void updateProjectFinancial(fd);
+      void (async () => {
+        const result = await updateProjectFinancial(fd);
+        if (result?.error) {
+          setErrors(result.error);
+          return;
+        }
+        setErrors(undefined);
+      })();
     });
   };
 
   return (
     <div className="space-y-6">
       <section className="rounded-lg border border-zinc-200 bg-white p-4 text-sm">
-        <h2 className="mb-4 text-lg font-medium">Financieel overzicht</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-medium">Financieel overzicht</h2>
+          <Link
+            href={`/print/${projectId}/offerte`}
+            className="text-sm text-zinc-600 underline hover:text-zinc-900"
+            target="_blank"
+          >
+            Offerte bekijken
+          </Link>
+        </div>
         <dl className="space-y-1.5">
           {t.materialGross > 0 && t.lineDiscountTotal > 0 && (
             <>
@@ -88,12 +112,21 @@ export default function ProjectFinancialOverview({
             <dt className="font-semibold text-zinc-900">Totaal excl. BTW</dt>
             <dd className="text-lg font-semibold tabular-nums">{formatEur(t.grandTotal)}</dd>
           </div>
+          <div className="flex justify-between gap-4 text-zinc-600">
+            <dt>BTW ({vat.vatRatePercent}%)</dt>
+            <dd className="tabular-nums">{formatEur(vat.vatAmount)}</dd>
+          </div>
+          <div className="flex justify-between gap-4 border-t border-zinc-200 pt-2">
+            <dt className="font-semibold text-zinc-900">Totaal incl. BTW</dt>
+            <dd className="text-lg font-semibold tabular-nums">{formatEur(vat.totalInclVat)}</dd>
+          </div>
         </dl>
       </section>
 
       <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
         <h3 className="mb-3 text-sm font-semibold text-zinc-900">Korting op totaal</h3>
         <form action={submitTotalDiscount} className="flex flex-wrap items-end gap-3">
+          <FormErrors errors={errors} className="w-full" />
           <input type="hidden" name="projectId" value={projectId} />
           <label className="grid gap-1 text-sm">
             Bedrag (EUR)

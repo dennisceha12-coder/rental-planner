@@ -25,9 +25,24 @@ export async function getProjectById(id: string) {
   });
 }
 
-export async function listProjects(status?: string) {
+import type { Prisma } from '@/generated/prisma/client';
+
+export async function listProjects(status?: string, search?: string) {
+  const q = search?.trim();
+  const where: Prisma.ProjectWhereInput = {};
+  if (status) {
+    where.status = status as 'CONCEPT' | 'OFFERTE' | 'BEVESTIGD' | 'AFGEROND';
+  }
+  if (q) {
+    where.OR = [
+      { title: { contains: q, mode: 'insensitive' } },
+      { location: { contains: q, mode: 'insensitive' } },
+      { quoteNumber: { contains: q, mode: 'insensitive' } },
+      { client: { name: { contains: q, mode: 'insensitive' } } },
+    ];
+  }
   return prisma.project.findMany({
-    where: status ? { status: status as 'CONCEPT' | 'OFFERTE' | 'BEVESTIGD' | 'AFGEROND' } : undefined,
+    where: Object.keys(where).length > 0 ? where : undefined,
     include: {
       client: true,
       lines: { include: { equipment: { include: { category: true } } } },
