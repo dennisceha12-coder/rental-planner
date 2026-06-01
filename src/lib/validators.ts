@@ -47,9 +47,12 @@ export const equipmentSchema = z.object({
     .optional()
     .transform((v) => (v && v.trim() !== '' ? v.trim() : null)),
   dailyRate: z.coerce.number().positive('Dagtarief moet positief zijn'),
-  stockQty: z.coerce.number().int().positive().optional().or(z.literal('')),
+  stockQty: z
+    .union([z.literal(''), z.coerce.number().int().positive()])
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? '' : v)),
   isExternalRental: z
-    .union([z.literal('on'), z.boolean()])
+    .union([z.literal('on'), z.boolean(), z.null()])
     .optional()
     .transform((v) => v === 'on' || v === true),
 });
