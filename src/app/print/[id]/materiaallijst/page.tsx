@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getProjectById } from '@/lib/project-queries';
 import { formatDateNl } from '@/lib/dates';
+import { projectLineName, projectLineCategory } from '@/lib/pricing';
 import PrintHeader from '@/components/print/PrintHeader';
 import PrintToolbar from '@/components/PrintToolbar';
 
@@ -15,7 +16,7 @@ export default async function MateriaallijstPrintPage({
 
   const grouped = new Map<string, typeof project.lines>();
   for (const line of project.lines) {
-    const cat = line.equipment.category ?? 'Overig';
+    const cat = projectLineCategory(line) ?? 'Overig';
     if (!grouped.has(cat)) grouped.set(cat, []);
     grouped.get(cat)!.push(line);
   }
@@ -52,7 +53,7 @@ export default async function MateriaallijstPrintPage({
                 {grouped.get(cat)!.map((line) => (
                   <tr key={line.id} className="border-b border-zinc-100">
                     <td className="py-2 font-bold tabular-nums">{line.quantity}×</td>
-                    <td className="py-2">{line.equipment.name}</td>
+                    <td className="py-2">{projectLineName(line)}</td>
                     <td className="py-2 text-center">
                       <span className="inline-block h-4 w-4 border border-zinc-400" />
                     </td>

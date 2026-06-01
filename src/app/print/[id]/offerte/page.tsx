@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getProjectById } from '@/lib/project-queries';
 import { formatDateNl } from '@/lib/dates';
-import { lineBreakdown, formatEur } from '@/lib/pricing';
+import { lineBreakdown, formatEur, projectLineName, projectLineDailyRate } from '@/lib/pricing';
 import {
   computeProjectTotals,
   quoteExtraLines,
@@ -116,10 +116,10 @@ export default async function OffertePrintPage({
                 const { days, total: lineTotal } = lineBreakdown(line);
                 return (
                   <tr key={line.id} className="border-b border-zinc-200">
-                    <td className="py-2">{line.equipment.name}</td>
+                    <td className="py-2">{projectLineName(line)}</td>
                     <td className="py-2 text-right">{line.quantity}</td>
                     <td className="py-2 text-right">{days}</td>
-                    <td className="py-2 text-right">{formatEur(line.equipment.dailyRate)}</td>
+                    <td className="py-2 text-right">{formatEur(projectLineDailyRate(line))}</td>
                     <td className="py-2 text-right font-medium">{formatEur(lineTotal)}</td>
                   </tr>
                 );

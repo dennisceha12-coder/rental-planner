@@ -138,13 +138,56 @@ export const CREW_PHASE_LABELS: Record<z.infer<typeof crewPhaseSchema>, string> 
   AFBOUW: 'Afbouw',
 };
 
-export const projectLineSchema = z.object({
-  projectId: z.string().min(1),
-  equipmentId: z.string().min(1),
-  quantity: z.coerce.number().int().positive('Aantal moet minimaal 1 zijn'),
-  rentalStart: z.string().min(1, 'Startdatum is verplicht'),
-  rentalEnd: z.string().min(1, 'Einddatum is verplicht'),
-});
+export const projectLineSchema = z
+  .object({
+    projectId: z.string().min(1),
+    lineType: z.enum(['catalog', 'custom']).default('catalog'),
+    equipmentId: z.string().optional(),
+    customName: z.string().optional(),
+    customDailyRate: z.coerce.number().optional(),
+    quantity: z.coerce.number().int().positive('Aantal moet minimaal 1 zijn'),
+    rentalStart: z.string().min(1, 'Startdatum is verplicht'),
+    rentalEnd: z.string().min(1, 'Einddatum is verplicht'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.lineType === 'catalog') {
+      if (!data.equipmentId?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Kies materiaal uit catalogus',
+          path: ['equipmentId'],
+        });
+      }
+    } else {
+      if (!data.customName?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Naam is verplicht',
+          path: ['customName'],
+        });
+      }
+      if (
+        data.customDailyRate == null ||
+        !Number.isFinite(data.customDailyRate) ||
+        data.customDailyRate <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Dagtarief moet positief zijn',
+          path: ['customDailyRate'],
+        });
+      }
+    }
+  })
+  .transform((data) => ({
+    projectId: data.projectId,
+    quantity: data.quantity,
+    rentalStart: data.rentalStart,
+    rentalEnd: data.rentalEnd,
+    equipmentId: data.lineType === 'catalog' ? data.equipmentId!.trim() : null,
+    customName: data.lineType === 'custom' ? data.customName!.trim() : null,
+    customDailyRate: data.lineType === 'custom' ? data.customDailyRate! : null,
+  }));
 
 export const STATUS_LABELS: Record<
   z.infer<typeof projectStatusSchema>,

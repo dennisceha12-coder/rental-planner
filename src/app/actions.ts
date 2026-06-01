@@ -207,7 +207,10 @@ export async function deleteProject(id: string) {
 export async function addProjectLine(formData: FormData) {
   const parsed = projectLineSchema.safeParse({
     projectId: formData.get('projectId'),
-    equipmentId: formData.get('equipmentId'),
+    lineType: formData.get('lineType') ?? 'catalog',
+    equipmentId: formData.get('equipmentId') || undefined,
+    customName: formData.get('customName') || undefined,
+    customDailyRate: formData.get('customDailyRate') || undefined,
     quantity: formData.get('quantity'),
     rentalStart: formData.get('rentalStart'),
     rentalEnd: formData.get('rentalEnd'),
@@ -223,11 +226,13 @@ export async function addProjectLine(formData: FormData) {
     return { error: { rentalEnd: ['Einddatum moet op of na startdatum liggen'] } };
   }
 
-  const { projectId, equipmentId, quantity } = parsed.data;
+  const { projectId, equipmentId, customName, customDailyRate, quantity } = parsed.data;
   await prisma.projectLine.create({
     data: {
       projectId,
       equipmentId,
+      customName,
+      customDailyRate,
       quantity,
       rentalStart: start,
       rentalEnd: end,
@@ -240,7 +245,10 @@ export async function addProjectLine(formData: FormData) {
 export async function updateProjectLine(lineId: string, formData: FormData) {
   const parsed = projectLineSchema.safeParse({
     projectId: formData.get('projectId'),
-    equipmentId: formData.get('equipmentId'),
+    lineType: formData.get('lineType') ?? 'catalog',
+    equipmentId: formData.get('equipmentId') || undefined,
+    customName: formData.get('customName') || undefined,
+    customDailyRate: formData.get('customDailyRate') || undefined,
     quantity: formData.get('quantity'),
     rentalStart: formData.get('rentalStart'),
     rentalEnd: formData.get('rentalEnd'),
@@ -257,6 +265,8 @@ export async function updateProjectLine(lineId: string, formData: FormData) {
     where: { id: lineId },
     data: {
       equipmentId: parsed.data.equipmentId,
+      customName: parsed.data.customName,
+      customDailyRate: parsed.data.customDailyRate,
       quantity: parsed.data.quantity,
       rentalStart: start,
       rentalEnd: end,
