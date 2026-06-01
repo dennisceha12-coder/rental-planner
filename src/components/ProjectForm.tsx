@@ -9,6 +9,7 @@ import {
   DEFAULT_TRANSPORT_RATE_PER_KM,
 } from '@/lib/constants';
 import type { FieldErrors } from '@/lib/form-errors';
+import { clientDisplayName } from '@/lib/clients';
 import type { Project, Client, ProjectStatus, TransportType } from '@/generated/prisma/client';
 
 type ProjectWithClient = Project & { client: Client };
@@ -99,7 +100,7 @@ export default function ProjectForm({
               >
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {clientDisplayName(c.name, c.type)}
                   </option>
                 ))}
               </select>
@@ -116,7 +117,7 @@ export default function ProjectForm({
                 <option value="">— of nieuwe klant hieronder —</option>
                 {clients.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {clientDisplayName(c.name, c.type)}
                   </option>
                 ))}
               </select>

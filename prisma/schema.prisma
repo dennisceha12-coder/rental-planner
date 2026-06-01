@@ -30,6 +30,11 @@ enum TransportType {
   FIXED
 }
 
+enum ClientType {
+  PARTICULIER
+  BEDRIJF
+}
+
 model CompanySettings {
   id                String @id @default("default")
   companyName       String @default("")
@@ -45,14 +50,15 @@ model CompanySettings {
 }
 
 model Client {
-  id        String    @id @default(cuid())
+  id        String     @id @default(cuid())
+  type      ClientType @default(BEDRIJF)
   name      String
   email     String?
   phone     String?
   address   String?
   vatNumber String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   projects  Project[]
 }
 

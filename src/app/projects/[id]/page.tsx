@@ -16,6 +16,7 @@ import { mapCrewShiftFromDb } from '@/lib/crew';
 import { getCompanySettings } from '@/lib/company-settings';
 import DuplicateProjectButton from '@/components/DuplicateProjectButton';
 import DeleteProjectButton from '@/components/DeleteProjectButton';
+import { CLIENT_TYPE_LABELS } from '@/lib/clients';
 
 export default async function ProjectPage({
   params,
@@ -70,7 +71,7 @@ export default async function ProjectPage({
             <StatusBadge status={project.status} />
           </div>
           <p className="mt-1 text-sm text-zinc-500">
-            {project.client.name}
+            {project.client.name} · {CLIENT_TYPE_LABELS[project.client.type]}
             {project.quoteNumber ? ` · ${project.quoteNumber}` : ''}
           </p>
         </div>

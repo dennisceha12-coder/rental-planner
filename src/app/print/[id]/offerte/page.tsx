@@ -15,6 +15,7 @@ import {
 } from '@/lib/company-settings';
 import PrintHeader from '@/components/print/PrintHeader';
 import PrintToolbar from '@/components/PrintToolbar';
+import { CLIENT_TYPE_LABELS } from '@/lib/clients';
 
 export default async function OffertePrintPage({
   params,
@@ -71,6 +72,7 @@ export default async function OffertePrintPage({
         <div>
           <h2 className="mb-2 font-semibold uppercase text-xs text-zinc-500">Klant</h2>
           <p className="font-medium">{project.client.name}</p>
+          <p className="text-zinc-600">{CLIENT_TYPE_LABELS[project.client.type]}</p>
           {project.client.address && <p>{project.client.address}</p>}
           {project.client.email && <p>{project.client.email}</p>}
           {project.client.phone && <p>{project.client.phone}</p>}

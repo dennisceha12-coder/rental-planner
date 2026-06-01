@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import ClientForm from '@/components/ClientForm';
 import DeleteClientButton from '@/components/DeleteClientButton';
+import { CLIENT_TYPE_LABELS } from '@/lib/clients';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,12 +36,20 @@ export default async function ClientsPage() {
               <li key={c.id} className="px-4 py-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium">{c.name}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{c.name}</p>
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                        {CLIENT_TYPE_LABELS[c.type]}
+                      </span>
+                    </div>
                     <p className="text-sm text-zinc-500">
                       {[c.email, c.phone].filter(Boolean).join(' · ') || '—'}
                     </p>
                     {c.address && (
                       <p className="mt-0.5 text-sm text-zinc-500">{c.address}</p>
+                    )}
+                    {c.vatNumber && (
+                      <p className="mt-0.5 text-sm text-zinc-500">BTW: {c.vatNumber}</p>
                     )}
                     <p className="mt-1 text-xs text-zinc-400">
                       {c._count.projects} project(en)

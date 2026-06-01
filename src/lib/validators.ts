@@ -17,17 +17,23 @@ export const projectStatusSchema = z.enum([
   'AFGEROND',
 ]);
 
-export const clientSchema = z.object({
-  name: z.string().min(1, 'Naam is verplicht'),
-  email: z
-    .string()
-    .optional()
-    .transform((v) => (v && v.trim() !== '' ? v.trim() : undefined))
-    .pipe(z.union([z.string().email(), z.undefined()])),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  vatNumber: z.string().optional(),
-});
+export const clientSchema = z
+  .object({
+    type: z.enum(['PARTICULIER', 'BEDRIJF']),
+    name: z.string().min(1, 'Naam is verplicht'),
+    email: z
+      .string()
+      .optional()
+      .transform((v) => (v && v.trim() !== '' ? v.trim() : undefined))
+      .pipe(z.union([z.string().email(), z.undefined()])),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    vatNumber: z.string().optional(),
+  })
+  .transform((data) => ({
+    ...data,
+    vatNumber: data.vatNumber?.trim() ? data.vatNumber.trim() : undefined,
+  }));
 
 export const equipmentCategorySchema = z.object({
   name: z.string().min(1, 'Naam is verplicht'),

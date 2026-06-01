@@ -47,6 +47,7 @@ function revalidateAll(projectId?: string) {
 
 export async function createClient(formData: FormData) {
   const parsed = clientSchema.safeParse({
+    type: formData.get('type') || 'BEDRIJF',
     name: formData.get('name'),
     email: formData.get('email') || undefined,
     phone: formData.get('phone') || undefined,
@@ -62,6 +63,7 @@ export async function createClient(formData: FormData) {
 
 export async function updateClient(id: string, formData: FormData) {
   const parsed = clientSchema.safeParse({
+    type: formData.get('type') || 'BEDRIJF',
     name: formData.get('name'),
     email: formData.get('email') || undefined,
     phone: formData.get('phone') || undefined,
