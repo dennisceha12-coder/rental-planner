@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { createEquipmentCategory, updateEquipmentCategory } from '@/app/actions';
 
 type Category = {
@@ -10,15 +11,19 @@ type Category = {
 };
 
 export default function CategoryForm({ category }: { category?: Category }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   return (
     <form
       action={(fd) => {
         startTransition(() => {
-          void (category
-            ? updateEquipmentCategory(category.id, fd)
-            : createEquipmentCategory(fd));
+          void (async () => {
+            const result = category
+              ? await updateEquipmentCategory(category.id, fd)
+              : await createEquipmentCategory(fd);
+            if (!result?.error) router.refresh();
+          })();
         });
       }}
       className="grid max-w-md gap-3 sm:grid-cols-2"

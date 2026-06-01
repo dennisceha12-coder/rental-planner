@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   addProjectLine,
   deleteProjectLine,
@@ -350,6 +351,7 @@ export default function ProjectLinesSection({
   defaultStart?: string;
   defaultEnd?: string;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [catalogQuery, setCatalogQuery] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, FieldErrors | undefined>>({});
@@ -380,6 +382,7 @@ export default function ProjectLinesSection({
           return;
         }
         setFormErrors((prev) => ({ ...prev, [key]: undefined }));
+        router.refresh();
       })();
     });
   };
@@ -393,6 +396,7 @@ export default function ProjectLinesSection({
           return;
         }
         setFormErrors((prev) => ({ ...prev, [`edit-${lineId}`]: undefined }));
+        router.refresh();
       })();
     });
   };
@@ -406,6 +410,7 @@ export default function ProjectLinesSection({
           return;
         }
         setFormErrors((prev) => ({ ...prev, [`discount-${lineId}`]: undefined }));
+        router.refresh();
       })();
     });
   };
@@ -537,7 +542,10 @@ export default function ProjectLinesSection({
                         onClick={() => {
                           if (!confirm('Regel verwijderen?')) return;
                           startTransition(() => {
-                            void deleteProjectLine(line.id, projectId);
+                            void (async () => {
+                              await deleteProjectLine(line.id, projectId);
+                              router.refresh();
+                            })();
                           });
                         }}
                         className="text-xs text-red-600 hover:underline"

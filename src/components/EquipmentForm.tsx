@@ -1,8 +1,11 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { createEquipment, updateEquipment } from '@/app/actions';
+import FormErrors from '@/components/FormErrors';
 import { categoryDisplayName } from '@/lib/equipment-categories';
+import type { FieldErrors } from '@/lib/form-errors';
 
 type Category = {
   id: string;
@@ -27,23 +30,32 @@ export default function EquipmentForm({
   equipment?: Equipment;
   categories: Category[];
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [errors, setErrors] = useState<FieldErrors | undefined>();
 
   function onSubmit(formData: FormData) {
     startTransition(() => {
       void (async () => {
-        if (equipment) {
-          await updateEquipment(equipment.id, formData);
-        } else {
-          await createEquipment(formData);
+        const result = equipment
+          ? await updateEquipment(equipment.id, formData)
+          : await createEquipment(formData);
+        if (result?.error) {
+          setErrors(result.error);
+          return;
+        }
+        setErrors(undefined);
+        if (!equipment) {
           (document.getElementById('equipment-form') as HTMLFormElement)?.reset();
         }
+        router.refresh();
       })();
     });
   }
 
   return (
     <form id="equipment-form" action={onSubmit} className="grid max-w-md gap-3">
+      <FormErrors errors={errors} />
       <label className="grid gap-1 text-sm">
         Naam *
         <input
