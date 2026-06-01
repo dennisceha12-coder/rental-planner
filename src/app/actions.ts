@@ -11,6 +11,8 @@ import {
   equipmentSchema,
   projectSchema,
   projectLineSchema,
+  projectFinancialSchema,
+  projectLineDiscountSchema,
   crewShiftSchema,
   companySettingsSchema,
   staffSchema,
@@ -196,8 +198,6 @@ export async function createProject(formData: FormData) {
     transportKm: formData.get('transportKm') ?? '',
     transportRatePerKm: formData.get('transportRatePerKm') ?? '',
     transportFixedAmount: formData.get('transportFixedAmount') ?? '',
-    discountType: formData.get('discountType') ?? '',
-    discountValue: formData.get('discountValue') ?? '',
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -235,8 +235,6 @@ export async function updateProject(id: string, formData: FormData) {
     transportKm: formData.get('transportKm') ?? '',
     transportRatePerKm: formData.get('transportRatePerKm') ?? '',
     transportFixedAmount: formData.get('transportFixedAmount') ?? '',
-    discountType: formData.get('discountType') ?? '',
-    discountValue: formData.get('discountValue') ?? '',
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -260,6 +258,26 @@ export async function deleteProject(id: string) {
   redirect('/');
 }
 
+export async function updateProjectFinancial(formData: FormData) {
+  const parsed = projectFinancialSchema.safeParse({
+    projectId: formData.get('projectId'),
+    totalDiscountAmount: formData.get('totalDiscountAmount') ?? '',
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  const amount =
+    parsed.data.totalDiscountAmount != null && parsed.data.totalDiscountAmount > 0
+      ? parsed.data.totalDiscountAmount
+      : null;
+
+  await prisma.project.update({
+    where: { id: parsed.data.projectId },
+    data: { totalDiscountAmount: amount },
+  });
+  revalidateAll(parsed.data.projectId);
+  return { ok: true };
+}
+
 // ——— Project lines ———
 
 export async function addProjectLine(formData: FormData) {
@@ -272,6 +290,8 @@ export async function addProjectLine(formData: FormData) {
     quantity: formData.get('quantity'),
     rentalStart: formData.get('rentalStart'),
     rentalEnd: formData.get('rentalEnd'),
+    discountType: formData.get('discountType') ?? '',
+    discountValue: formData.get('discountValue') ?? '',
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -284,7 +304,15 @@ export async function addProjectLine(formData: FormData) {
     return { error: { rentalEnd: ['Einddatum moet op of na startdatum liggen'] } };
   }
 
-  const { projectId, equipmentId, customName, customDailyRate, quantity } = parsed.data;
+  const {
+    projectId,
+    equipmentId,
+    customName,
+    customDailyRate,
+    quantity,
+    discountType,
+    discountValue,
+  } = parsed.data;
   await prisma.projectLine.create({
     data: {
       projectId,
@@ -294,6 +322,8 @@ export async function addProjectLine(formData: FormData) {
       quantity,
       rentalStart: start,
       rentalEnd: end,
+      discountType,
+      discountValue,
     },
   });
   revalidateAll(projectId);
@@ -310,6 +340,8 @@ export async function updateProjectLine(lineId: string, formData: FormData) {
     quantity: formData.get('quantity'),
     rentalStart: formData.get('rentalStart'),
     rentalEnd: formData.get('rentalEnd'),
+    discountType: formData.get('discountType') ?? '',
+    discountValue: formData.get('discountValue') ?? '',
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -328,6 +360,27 @@ export async function updateProjectLine(lineId: string, formData: FormData) {
       quantity: parsed.data.quantity,
       rentalStart: start,
       rentalEnd: end,
+      discountType: parsed.data.discountType,
+      discountValue: parsed.data.discountValue,
+    },
+  });
+  revalidateAll(parsed.data.projectId);
+  return { ok: true };
+}
+
+export async function updateProjectLineDiscount(lineId: string, formData: FormData) {
+  const parsed = projectLineDiscountSchema.safeParse({
+    projectId: formData.get('projectId'),
+    discountType: formData.get('discountType') ?? '',
+    discountValue: formData.get('discountValue') ?? '',
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  await prisma.projectLine.update({
+    where: { id: lineId },
+    data: {
+      discountType: parsed.data.discountType,
+      discountValue: parsed.data.discountValue,
     },
   });
   revalidateAll(parsed.data.projectId);

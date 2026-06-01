@@ -1,7 +1,6 @@
 import { formatEur } from '@/lib/pricing';
 import {
   computeProjectTotals,
-  formatDiscountLabel,
   formatTransportLabel,
   type ProjectCostFields,
 } from '@/lib/project-totals';
@@ -48,10 +47,10 @@ export default function ProjectCostSummary({
             <dd className="tabular-nums">{formatEur(t.transport)}</dd>
           </div>
         )}
-        {t.discountAmount > 0 && (
+        {t.totalDiscountAmount > 0 && (
           <div className="flex justify-between gap-4 text-zinc-600">
-            <dt>Korting ({formatDiscountLabel(costs)})</dt>
-            <dd className="tabular-nums text-red-700">−{formatEur(t.discountAmount)}</dd>
+            <dt>Korting op totaal</dt>
+            <dd className="tabular-nums text-red-700">−{formatEur(t.totalDiscountAmount)}</dd>
           </div>
         )}
         <div className="flex justify-between gap-4 border-t border-zinc-200 pt-2">
@@ -62,6 +61,12 @@ export default function ProjectCostSummary({
       {!hasExtras && t.material === 0 && (
         <p className="mt-2 text-xs text-zinc-500">
           Voeg materiaal, personeelsplanning of transport toe.
+        </p>
+      )}
+      {(t.lineDiscountTotal > 0 || t.totalDiscountAmount > 0) && (
+        <p className="mt-2 text-xs text-zinc-500">
+          Kortingen beheer je op tabblad <strong>Materiaal</strong> (per regel) en{' '}
+          <strong>Financieel</strong> (op totaal).
         </p>
       )}
     </div>

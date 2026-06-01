@@ -78,8 +78,7 @@ model Project {
   transportKm          Float?
   transportRatePerKm   Float?
   transportFixedAmount Float?
-  discountType     DiscountType?
-  discountValue    Float?
+  totalDiscountAmount Float?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   lines        ProjectLine[]
@@ -155,6 +154,8 @@ model ProjectLine {
   quantity    Int
   rentalStart DateTime
   rentalEnd   DateTime
+  discountType  DiscountType?
+  discountValue Float?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }

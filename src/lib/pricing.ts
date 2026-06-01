@@ -1,5 +1,12 @@
 import { CUSTOM_LINE_CATEGORY_NAME, categoryDisplayName } from '@/lib/equipment-categories';
 
+export type DiscountType = 'PERCENTAGE' | 'AMOUNT';
+
+export type LineDiscount = {
+  discountType: DiscountType | null;
+  discountValue: number | null;
+};
+
 export function lineTotal(
   quantity: number,
   dailyRate: number,
@@ -29,6 +36,39 @@ export function formatEur(amount: number): string {
   }).format(amount);
 }
 
+export function computeDiscountAmount(
+  subtotal: number,
+  discount: LineDiscount
+): number {
+  if (
+    !discount.discountType ||
+    discount.discountValue == null ||
+    discount.discountValue <= 0 ||
+    subtotal <= 0
+  ) {
+    return 0;
+  }
+  if (discount.discountType === 'PERCENTAGE') {
+    const pct = Math.min(discount.discountValue, 100);
+    return subtotal * (pct / 100);
+  }
+  return Math.min(discount.discountValue, subtotal);
+}
+
+export function formatDiscountLabel(discount: LineDiscount): string {
+  if (
+    !discount.discountType ||
+    discount.discountValue == null ||
+    discount.discountValue <= 0
+  ) {
+    return '';
+  }
+  if (discount.discountType === 'PERCENTAGE') {
+    return `${discount.discountValue}%`;
+  }
+  return formatEur(discount.discountValue);
+}
+
 export type ProjectLineRecord = {
   id: string;
   quantity: number;
@@ -37,6 +77,8 @@ export type ProjectLineRecord = {
   equipmentId: string | null;
   customName: string | null;
   customDailyRate: number | null;
+  discountType: DiscountType | null;
+  discountValue: number | null;
   equipment: {
     id: string;
     name: string;
@@ -66,7 +108,6 @@ export function externalRentalLines(lines: ProjectLineRecord[]): ProjectLineReco
   return lines.filter(isExternalRentalLine);
 }
 
-
 export function projectLineName(line: ProjectLineRecord): string {
   if (isCustomProjectLine(line)) return line.customName!.trim();
   return line.equipment?.name ?? 'Onbekend';
@@ -82,29 +123,41 @@ export function projectLineDailyRate(line: ProjectLineRecord): number {
   return line.equipment?.dailyRate ?? 0;
 }
 
-export function projectMaterialTotal(lines: ProjectLineRecord[]): number {
-  return lines.reduce(
-    (sum, line) =>
-      sum +
-      lineTotal(
-        line.quantity,
-        projectLineDailyRate(line),
-        line.rentalStart,
-        line.rentalEnd
-      ),
-    0
-  );
-}
-
-export function lineBreakdown(line: ProjectLineRecord) {
-  const days = rentalDays(line.rentalStart, line.rentalEnd);
-  const total = lineTotal(
+export function lineGrossTotal(line: ProjectLineRecord): number {
+  return lineTotal(
     line.quantity,
     projectLineDailyRate(line),
     line.rentalStart,
     line.rentalEnd
   );
-  return { days, total };
+}
+
+export function lineDiscountAmount(line: ProjectLineRecord): number {
+  return computeDiscountAmount(lineGrossTotal(line), line);
+}
+
+export function lineNetTotal(line: ProjectLineRecord): number {
+  return Math.max(0, lineGrossTotal(line) - lineDiscountAmount(line));
+}
+
+export function projectMaterialGrossTotal(lines: ProjectLineRecord[]): number {
+  return lines.reduce((sum, line) => sum + lineGrossTotal(line), 0);
+}
+
+export function projectLineDiscountTotal(lines: ProjectLineRecord[]): number {
+  return lines.reduce((sum, line) => sum + lineDiscountAmount(line), 0);
+}
+
+export function projectMaterialTotal(lines: ProjectLineRecord[]): number {
+  return lines.reduce((sum, line) => sum + lineNetTotal(line), 0);
+}
+
+export function lineBreakdown(line: ProjectLineRecord) {
+  const days = rentalDays(line.rentalStart, line.rentalEnd);
+  const gross = lineGrossTotal(line);
+  const discount = lineDiscountAmount(line);
+  const total = Math.max(0, gross - discount);
+  return { days, gross, discount, total };
 }
 
 /** Sum quantity per catalog item across lines (for stock warning). */

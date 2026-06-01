@@ -9,6 +9,7 @@ import ProjectLinesSection from '@/components/ProjectLinesSection';
 import PrintActions from '@/components/PrintActions';
 import ProjectExportButton from '@/components/ProjectExportButton';
 import ProjectCostSummary from '@/components/ProjectCostSummary';
+import ProjectFinancialOverview from '@/components/ProjectFinancialOverview';
 import CrewPlanningSection from '@/components/CrewPlanningSection';
 import { projectToCostFields } from '@/lib/project-totals';
 import { mapCrewShiftFromDb } from '@/lib/crew';
@@ -36,7 +37,12 @@ export default async function ProjectPage({
   ]);
 
   const activeTab =
-    tab === 'materiaal' || tab === 'personeel' || tab === 'documenten' ? tab : 'algemeen';
+    tab === 'materiaal' ||
+    tab === 'personeel' ||
+    tab === 'documenten' ||
+    tab === 'financieel'
+      ? tab
+      : 'algemeen';
   const defaultStart = toDateInputValue(project.loadIn ?? project.showDate);
   const defaultEnd = toDateInputValue(project.loadOut ?? project.showDate);
   const defaultCrewDate = toDateInputValue(project.loadIn ?? project.showDate);
@@ -45,6 +51,7 @@ export default async function ProjectPage({
     { key: 'algemeen', label: 'Algemeen' },
     { key: 'personeel', label: 'Personeel' },
     { key: 'materiaal', label: 'Materiaal' },
+    { key: 'financieel', label: 'Financieel' },
     { key: 'documenten', label: 'Documenten' },
   ] as const;
 
@@ -117,10 +124,20 @@ export default async function ProjectPage({
             ...l,
             equipmentId: l.equipmentId,
             projectId: l.projectId,
+            discountType: l.discountType,
+            discountValue: l.discountValue,
           }))}
           equipment={equipment}
           defaultStart={defaultStart}
           defaultEnd={defaultEnd}
+        />
+      )}
+
+      {activeTab === 'financieel' && (
+        <ProjectFinancialOverview
+          projectId={project.id}
+          lines={project.lines}
+          costs={projectToCostFields(project)}
         />
       )}
 

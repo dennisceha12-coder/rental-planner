@@ -1,11 +1,12 @@
 'use client';
 
 import { useTransition } from 'react';
-import { addProjectLine, deleteProjectLine } from '@/app/actions';
+import { addProjectLine, deleteProjectLine, updateProjectLineDiscount } from '@/app/actions';
 import {
   lineBreakdown,
   projectMaterialTotal,
   formatEur,
+  formatDiscountLabel,
   quantityUsedOnProject,
   projectLineName,
   projectLineCategory,
@@ -27,6 +28,39 @@ type CatalogEquipment = {
 };
 
 type Line = ProjectLineRecord & { id: string; projectId: string };
+
+function DiscountFields({
+  discountType,
+  discountValue,
+  compact,
+}: {
+  discountType?: string | null;
+  discountValue?: number | null;
+  compact?: boolean;
+}) {
+  return (
+    <div className={`flex flex-wrap gap-2 ${compact ? 'items-center' : ''}`}>
+      <select
+        name="discountType"
+        defaultValue={discountType ?? ''}
+        className={`rounded border border-zinc-300 bg-white px-2 py-1 text-xs ${compact ? 'max-w-[7rem]' : ''}`}
+      >
+        <option value="">Geen</option>
+        <option value="PERCENTAGE">%</option>
+        <option value="AMOUNT">EUR</option>
+      </select>
+      <input
+        name="discountValue"
+        type="number"
+        step="0.01"
+        min="0"
+        placeholder={discountType === 'PERCENTAGE' ? '10' : '50'}
+        defaultValue={discountValue ?? ''}
+        className={`rounded border border-zinc-300 bg-white px-2 py-1 text-xs tabular-nums ${compact ? 'w-16' : 'w-24'}`}
+      />
+    </div>
+  );
+}
 
 function LineForm({
   projectId,
@@ -50,7 +84,7 @@ function LineForm({
   return (
     <form
       action={onSubmit}
-      className="grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 sm:grid-cols-2 lg:grid-cols-5"
+      className="grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 sm:grid-cols-2 lg:grid-cols-6"
     >
       <input type="hidden" name="projectId" value={projectId} />
       <input type="hidden" name="lineType" value={lineType} />
@@ -130,12 +164,44 @@ function LineForm({
           className="rounded border border-zinc-300 px-3 py-2"
         />
       </label>
+      <div className="grid gap-1 text-sm">
+        <span>Korting</span>
+        <DiscountFields />
+      </div>
       <button
         type="submit"
         disabled={pending}
-        className="self-end rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 lg:col-span-5 lg:w-fit"
+        className="self-end rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 lg:col-span-6 lg:w-fit"
       >
         {isCatalog ? 'Uit catalogus toevoegen' : 'Tijdelijk materiaal toevoegen'}
+      </button>
+    </form>
+  );
+}
+
+function LineDiscountForm({
+  line,
+  pending,
+  onSubmit,
+}: {
+  line: Line;
+  pending: boolean;
+  onSubmit: (fd: FormData) => void;
+}) {
+  return (
+    <form action={onSubmit} className="flex flex-wrap items-center gap-1">
+      <input type="hidden" name="projectId" value={line.projectId} />
+      <DiscountFields
+        discountType={line.discountType}
+        discountValue={line.discountValue}
+        compact
+      />
+      <button
+        type="submit"
+        disabled={pending}
+        className="text-xs text-zinc-600 hover:text-zinc-900 disabled:opacity-50"
+      >
+        Opslaan
       </button>
     </form>
   );
@@ -176,6 +242,12 @@ export default function ProjectLinesSection({
   const submitLine = (fd: FormData) => {
     startTransition(() => {
       void addProjectLine(fd);
+    });
+  };
+
+  const submitLineDiscount = (lineId: string, fd: FormData) => {
+    startTransition(() => {
+      void updateProjectLineDiscount(lineId, fd);
     });
   };
 
@@ -224,22 +296,24 @@ export default function ProjectLinesSection({
       {lines.length === 0 ? (
         <p className="text-sm text-zinc-500">Nog geen materiaal op dit project.</p>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-          <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
               <tr>
                 <th className="px-4 py-2">Materiaal</th>
                 <th className="px-4 py-2">Aantal</th>
                 <th className="px-4 py-2">Periode</th>
                 <th className="px-4 py-2">Dagen</th>
+                <th className="px-4 py-2">Korting</th>
                 <th className="px-4 py-2 text-right">Totaal</th>
                 <th className="px-4 py-2" />
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {lines.map((line) => {
-                const { days, total: lineTotal } = lineBreakdown(line);
+                const { days, gross, discount, total: lineTotal } = lineBreakdown(line);
                 const category = projectLineCategory(line);
+                const discountLabel = formatDiscountLabel(line);
                 return (
                   <tr key={line.id}>
                     <td className="px-4 py-3">
@@ -261,8 +335,29 @@ export default function ProjectLinesSection({
                       {toDateInputValue(line.rentalStart)} → {toDateInputValue(line.rentalEnd)}
                     </td>
                     <td className="px-4 py-3">{days}</td>
-                    <td className="px-4 py-3 text-right tabular-nums font-medium">
-                      {formatEur(lineTotal)}
+                    <td className="px-4 py-3">
+                      <LineDiscountForm
+                        line={line}
+                        pending={pending}
+                        onSubmit={(fd) => submitLineDiscount(line.id, fd)}
+                      />
+                      {discount > 0 && discountLabel && (
+                        <div className="mt-1 text-xs text-red-700">
+                          −{formatEur(discount)} ({discountLabel})
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {discount > 0 ? (
+                        <>
+                          <div className="text-xs text-zinc-400 line-through">
+                            {formatEur(gross)}
+                          </div>
+                          <div className="font-medium">{formatEur(lineTotal)}</div>
+                        </>
+                      ) : (
+                        <div className="font-medium">{formatEur(lineTotal)}</div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -274,7 +369,7 @@ export default function ProjectLinesSection({
                             void deleteProjectLine(line.id, projectId);
                           });
                         }}
-                        className="text-red-600 hover:underline text-xs"
+                        className="text-xs text-red-600 hover:underline"
                       >
                         Verwijder
                       </button>
@@ -285,7 +380,7 @@ export default function ProjectLinesSection({
             </tbody>
             <tfoot className="border-t border-zinc-200 bg-zinc-50">
               <tr>
-                <td colSpan={4} className="px-4 py-3 text-right font-semibold">
+                <td colSpan={5} className="px-4 py-3 text-right font-semibold">
                   Totaal materiaal
                 </td>
                 <td className="px-4 py-3 text-right text-lg font-semibold tabular-nums">

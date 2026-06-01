@@ -1,12 +1,11 @@
 import { notFound } from 'next/navigation';
 import { getProjectById } from '@/lib/project-queries';
 import { formatDateNl } from '@/lib/dates';
-import { lineBreakdown, formatEur, projectLineName, projectLineDailyRate } from '@/lib/pricing';
+import { lineBreakdown, formatEur, projectLineName, projectLineDailyRate, formatDiscountLabel } from '@/lib/pricing';
 import {
   computeProjectTotals,
   quoteExtraLines,
   projectToCostFields,
-  formatDiscountLabel,
 } from '@/lib/project-totals';
 import {
   getCompanySettings,
@@ -113,14 +112,31 @@ export default async function OffertePrintPage({
             </thead>
             <tbody>
               {project.lines.map((line) => {
-                const { days, total: lineTotal } = lineBreakdown(line);
+                const { days, gross, discount, total: lineTotal } = lineBreakdown(line);
+                const discountLabel = formatDiscountLabel(line);
                 return (
                   <tr key={line.id} className="border-b border-zinc-200">
-                    <td className="py-2">{projectLineName(line)}</td>
+                    <td className="py-2">
+                      {projectLineName(line)}
+                      {discount > 0 && discountLabel && (
+                        <div className="text-xs text-zinc-500">
+                          Korting: {discountLabel} (−{formatEur(discount)})
+                        </div>
+                      )}
+                    </td>
                     <td className="py-2 text-right">{line.quantity}</td>
                     <td className="py-2 text-right">{days}</td>
                     <td className="py-2 text-right">{formatEur(projectLineDailyRate(line))}</td>
-                    <td className="py-2 text-right font-medium">{formatEur(lineTotal)}</td>
+                    <td className="py-2 text-right font-medium">
+                      {discount > 0 ? (
+                        <>
+                          <span className="text-zinc-400 line-through">{formatEur(gross)}</span>{' '}
+                          {formatEur(lineTotal)}
+                        </>
+                      ) : (
+                        formatEur(lineTotal)
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -184,13 +200,19 @@ export default async function OffertePrintPage({
               <td className="py-1 pl-4 text-right tabular-nums">{formatEur(totals.transport)}</td>
             </tr>
           )}
-          {totals.discountAmount > 0 && (
+          {totals.lineDiscountTotal > 0 && (
             <tr>
-              <td className="py-1 text-right text-zinc-600">
-                Korting ({formatDiscountLabel(project)})
-              </td>
+              <td className="py-1 text-right text-zinc-600">Korting materiaalregels</td>
               <td className="py-1 pl-4 text-right tabular-nums text-red-700">
-                −{formatEur(totals.discountAmount)}
+                −{formatEur(totals.lineDiscountTotal)}
+              </td>
+            </tr>
+          )}
+          {totals.totalDiscountAmount > 0 && (
+            <tr>
+              <td className="py-1 text-right text-zinc-600">Korting op totaal</td>
+              <td className="py-1 pl-4 text-right tabular-nums text-red-700">
+                −{formatEur(totals.totalDiscountAmount)}
               </td>
             </tr>
           )}

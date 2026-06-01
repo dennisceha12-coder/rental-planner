@@ -50,6 +50,40 @@ export const equipmentSchema = z.object({
 
 export const discountTypeSchema = z.enum(['PERCENTAGE', 'AMOUNT']);
 
+function refineDiscountFields(
+  data: {
+    discountType: 'PERCENTAGE' | 'AMOUNT' | null;
+    discountValue: number | null;
+  },
+  ctx: z.RefinementCtx
+) {
+  if (data.discountType && (data.discountValue == null || data.discountValue <= 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Vul een kortingswaarde in',
+      path: ['discountValue'],
+    });
+  }
+  if (
+    data.discountType === 'PERCENTAGE' &&
+    data.discountValue != null &&
+    data.discountValue > 100
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Percentage mag maximaal 100 zijn',
+      path: ['discountValue'],
+    });
+  }
+  if (!data.discountType && data.discountValue != null && data.discountValue > 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Kies een kortingstype',
+      path: ['discountType'],
+    });
+  }
+}
+
 export const transportTypeSchema = z.enum(['PER_KM', 'FIXED']);
 
 export const TRANSPORT_TYPE_LABELS: Record<z.infer<typeof transportTypeSchema>, string> = {
@@ -81,38 +115,8 @@ export const projectSchema = z
     transportKm: optionalNonNegativeNumber,
     transportRatePerKm: optionalNonNegativeNumber,
     transportFixedAmount: optionalNonNegativeNumber,
-    discountType: z
-      .string()
-      .optional()
-      .transform((v) => (v === 'PERCENTAGE' || v === 'AMOUNT' ? v : null)),
-    discountValue: optionalNonNegativeNumber,
   })
   .superRefine((data, ctx) => {
-    if (data.discountType && (data.discountValue == null || data.discountValue <= 0)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Vul een kortingswaarde in',
-        path: ['discountValue'],
-      });
-    }
-    if (
-      data.discountType === 'PERCENTAGE' &&
-      data.discountValue != null &&
-      data.discountValue > 100
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Percentage mag maximaal 100 zijn',
-        path: ['discountValue'],
-      });
-    }
-    if (!data.discountType && data.discountValue != null && data.discountValue > 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Kies een kortingstype',
-        path: ['discountType'],
-      });
-    }
     if (data.transportType === 'PER_KM') {
       const hasKm = data.transportKm != null && data.transportKm > 0;
       const hasRate = data.transportRatePerKm != null && data.transportRatePerKm > 0;
@@ -127,10 +131,32 @@ export const projectSchema = z
   })
   .transform((data) => ({
     ...data,
-    discountValue: data.discountType ? data.discountValue : null,
     transportKm: data.transportType === 'PER_KM' ? data.transportKm : null,
     transportRatePerKm: data.transportType === 'PER_KM' ? data.transportRatePerKm : null,
     transportFixedAmount: data.transportType === 'FIXED' ? data.transportFixedAmount : null,
+  }));
+
+export const projectFinancialSchema = z.object({
+  projectId: z.string().min(1),
+  totalDiscountAmount: optionalNonNegativeNumber,
+});
+
+export const projectLineDiscountSchema = z
+  .object({
+    projectId: z.string().min(1),
+    discountType: z
+      .string()
+      .optional()
+      .transform((v): z.infer<typeof discountTypeSchema> | null =>
+        v === 'PERCENTAGE' || v === 'AMOUNT' ? v : null
+      ),
+    discountValue: optionalNonNegativeNumber,
+  })
+  .superRefine(refineDiscountFields)
+  .transform((data) => ({
+    projectId: data.projectId,
+    discountType: data.discountType,
+    discountValue: data.discountType ? data.discountValue : null,
   }));
 
 export const crewPhaseSchema = z.enum(['OPBOUW', 'SHOW', 'AFBOUW']);
@@ -186,8 +212,16 @@ export const projectLineSchema = z
     quantity: z.coerce.number().int().positive('Aantal moet minimaal 1 zijn'),
     rentalStart: z.string().min(1, 'Startdatum is verplicht'),
     rentalEnd: z.string().min(1, 'Einddatum is verplicht'),
+    discountType: z
+      .string()
+      .optional()
+      .transform((v): z.infer<typeof discountTypeSchema> | null =>
+        v === 'PERCENTAGE' || v === 'AMOUNT' ? v : null
+      ),
+    discountValue: optionalNonNegativeNumber,
   })
   .superRefine((data, ctx) => {
+    refineDiscountFields(data, ctx);
     if (data.lineType === 'catalog') {
       if (!data.equipmentId?.trim()) {
         ctx.addIssue({
@@ -225,6 +259,8 @@ export const projectLineSchema = z
     equipmentId: data.lineType === 'catalog' ? data.equipmentId!.trim() : null,
     customName: data.lineType === 'custom' ? data.customName!.trim() : null,
     customDailyRate: data.lineType === 'custom' ? data.customDailyRate! : null,
+    discountType: data.discountType,
+    discountValue: data.discountType ? data.discountValue : null,
   }));
 
 export const STATUS_LABELS: Record<
