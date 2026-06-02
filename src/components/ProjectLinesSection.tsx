@@ -287,7 +287,7 @@ function LineEditForm({
             </label>
             <CategorySelect
               categories={categories}
-              defaultValue={line.categoryId}
+              defaultValue={line.category?.id}
               className="rounded border border-zinc-300 px-2 py-1"
             />
             <label className="grid gap-1 text-xs">

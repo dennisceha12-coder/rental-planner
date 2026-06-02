@@ -59,10 +59,10 @@ export function groupEquipmentByCategory<
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'nl'));
 }
 
-export function groupProjectLinesByCategory(
-  lines: ProjectLineRecord[]
-): CategoryGroup<ProjectLineRecord>[] {
-  const map = new Map<string, CategoryGroup<ProjectLineRecord>>();
+export function groupProjectLinesByCategory<T extends ProjectLineRecord>(
+  lines: T[]
+): CategoryGroup<T>[] {
+  const map = new Map<string, CategoryGroup<T>>();
 
   for (const line of lines) {
     const cat = resolveLineCategory(line);
