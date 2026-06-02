@@ -31,6 +31,7 @@ function ShiftForm({
   defaultDate,
   defaultStartTime,
   defaultEndTime,
+  compact,
   onDone,
 }: {
   projectId: string;
@@ -39,12 +40,14 @@ function ShiftForm({
   defaultDate?: string;
   defaultStartTime?: string;
   defaultEndTime?: string;
+  compact?: boolean;
   onDone?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<FieldErrors | undefined>();
   const phases = Object.keys(CREW_PHASE_LABELS) as CrewPhase[];
   const isEdit = !!shift;
+  const fieldClass = 'w-full min-w-0 rounded border border-zinc-300 px-3 py-2';
 
   return (
     <form
@@ -64,17 +67,21 @@ function ShiftForm({
           })();
         });
       }}
-      className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+      className={
+        compact
+          ? 'grid grid-cols-1 gap-3 sm:grid-cols-2'
+          : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4'
+      }
     >
-      <FormErrors errors={errors} className="sm:col-span-2 lg:col-span-4" />
+      <FormErrors errors={errors} className={compact ? 'sm:col-span-2' : 'sm:col-span-2 lg:col-span-4'} />
       <input type="hidden" name="projectId" value={projectId} />
-      <label className="grid gap-1 text-sm">
+      <label className="grid min-w-0 gap-1 text-sm">
         Fase
         <select
           name="phase"
           required
           defaultValue={shift?.phase ?? 'OPBOUW'}
-          className="rounded border border-zinc-300 px-3 py-2"
+          className={fieldClass}
         >
           {phases.map((p) => (
             <option key={p} value={p}>
@@ -83,16 +90,16 @@ function ShiftForm({
           ))}
         </select>
       </label>
-      <label className="grid gap-1 text-sm">
+      <label className="grid min-w-0 gap-1 text-sm">
         Rol / functie
         <input
           name="role"
           placeholder="Technicus, rigger…"
           defaultValue={shift?.role ?? ''}
-          className="rounded border border-zinc-300 px-3 py-2"
+          className={fieldClass}
         />
       </label>
-      <label className="grid gap-1 text-sm">
+      <label className="grid min-w-0 gap-1 text-sm">
         Personen (min.)
         <input
           name="headcount"
@@ -100,38 +107,38 @@ function ShiftForm({
           min={1}
           defaultValue={shift?.headcount ?? 2}
           required
-          className="rounded border border-zinc-300 px-3 py-2"
+          className={fieldClass}
         />
       </label>
-      <label className="grid gap-1 text-sm">
+      <label className="grid min-w-0 gap-1 text-sm">
         Datum
         <input
           name="date"
           type="date"
           required
           defaultValue={shift ? toDateInputValue(shift.date) : defaultDate}
-          className="rounded border border-zinc-300 px-3 py-2"
+          className={fieldClass}
         />
       </label>
-      <label className="grid gap-1 text-sm">
+      <label className="grid min-w-0 gap-1 text-sm">
         Van
         <input
           name="startTime"
           required
           defaultValue={shift?.startTime ?? defaultStartTime ?? '08:00'}
-          className="rounded border border-zinc-300 px-3 py-2"
+          className={fieldClass}
         />
       </label>
-      <label className="grid gap-1 text-sm">
+      <label className="grid min-w-0 gap-1 text-sm">
         Tot
         <input
           name="endTime"
           required
           defaultValue={shift?.endTime ?? defaultEndTime ?? '14:00'}
-          className="rounded border border-zinc-300 px-3 py-2"
+          className={fieldClass}
         />
       </label>
-      <label className="grid gap-1 text-sm">
+      <label className={`grid min-w-0 gap-1 text-sm ${compact ? 'sm:col-span-2' : ''}`}>
         Uurtarief (optioneel)
         <input
           name="hourlyRate"
@@ -140,11 +147,11 @@ function ShiftForm({
           min="0"
           placeholder="Standaard"
           defaultValue={shift?.hourlyRate ?? ''}
-          className="rounded border border-zinc-300 px-3 py-2"
+          className={fieldClass}
         />
       </label>
       {staff.length > 0 && (
-        <fieldset className="sm:col-span-2 lg:col-span-4">
+        <fieldset className={compact ? 'sm:col-span-2' : 'sm:col-span-2 lg:col-span-4'}>
           <legend className="mb-2 text-sm font-medium">Teamleden toewijzen</legend>
           <div className="flex flex-wrap gap-3">
             {staff.map((s) => (
@@ -164,7 +171,9 @@ function ShiftForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-end rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 lg:col-span-4 lg:w-fit"
+        className={`self-end rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 ${
+          compact ? 'sm:col-span-2 sm:w-fit' : 'lg:col-span-4 lg:w-fit'
+        }`}
       >
         {pending ? 'Opslaan…' : isEdit ? 'Shift bijwerken' : 'Shift toevoegen'}
       </button>
@@ -254,8 +263,8 @@ export default function CrewPlanningSection({
       {shifts.length === 0 ? (
         <p className="text-sm text-zinc-500">Nog geen personeelsplanning.</p>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-          <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+          <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
               <tr>
                 <th className="px-4 py-2">Fase</th>
@@ -294,11 +303,12 @@ export default function CrewPlanningSection({
                     <td className="px-4 py-3 align-top">
                       <details className="text-sm">
                         <summary className="cursor-pointer text-zinc-600">Bewerken</summary>
-                        <div className="mt-3 min-w-[320px] rounded border border-zinc-200 bg-zinc-50 p-3">
+                        <div className="mt-3 w-[min(100vw-2rem,28rem)] min-w-[16rem] rounded border border-zinc-200 bg-zinc-50 p-3">
                           <ShiftForm
                             projectId={projectId}
                             staff={staff}
                             shift={shift}
+                            compact
                           />
                           <button
                             type="button"
