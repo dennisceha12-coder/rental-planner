@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   addProjectLine,
@@ -16,14 +16,13 @@ import {
   formatDiscountLabel,
   quantityUsedOnProject,
   projectLineName,
-  projectLineCategory,
   projectLineDailyRate,
   isCustomProjectLine,
   isExternalRentalLine,
   type ProjectLineRecord,
 } from '@/lib/pricing';
 import { toDateInputValue } from '@/lib/dates';
-import { groupEquipmentByCategory } from '@/lib/equipment-categories';
+import { groupEquipmentByCategory, groupProjectLinesByCategory } from '@/lib/equipment-categories';
 import type { FieldErrors } from '@/lib/form-errors';
 
 type CatalogEquipment = {
@@ -339,6 +338,94 @@ function LineDiscountForm({
   );
 }
 
+function ProjectLineRow({
+  line,
+  pending,
+  editErrors,
+  discountErrors,
+  onEdit,
+  onDiscount,
+  onDelete,
+}: {
+  line: Line;
+  pending: boolean;
+  editErrors?: FieldErrors;
+  discountErrors?: FieldErrors;
+  onEdit: (fd: FormData) => void;
+  onDiscount: (fd: FormData) => void;
+  onDelete: () => void;
+}) {
+  const { days, gross, discount, total: lineTotal } = lineBreakdown(line);
+  const discountLabel = formatDiscountLabel(line);
+  const rate = projectLineDailyRate(line);
+
+  return (
+    <tr>
+      <td className="px-4 py-3">
+        <div className="font-medium">{projectLineName(line)}</div>
+        {isCustomProjectLine(line) && (
+          <div className="text-xs text-zinc-500">
+            {rate === 0 ? 'Gratis' : `${formatEur(rate)}/dag`}
+          </div>
+        )}
+        {isExternalRentalLine(line) && (
+          <div className="text-xs text-amber-700">Extern inhuur</div>
+        )}
+        <details className="mt-2">
+          <summary className="cursor-pointer text-xs text-zinc-600">Bewerken</summary>
+          <LineEditForm
+            line={line}
+            pending={pending}
+            onSubmit={onEdit}
+            errors={editErrors}
+          />
+        </details>
+      </td>
+      <td className="px-4 py-3">{line.quantity}</td>
+      <td className="px-4 py-3 text-zinc-600">
+        {toDateInputValue(line.rentalStart)} → {toDateInputValue(line.rentalEnd)}
+      </td>
+      <td className="px-4 py-3">{days}</td>
+      <td className="px-4 py-3">
+        <LineDiscountForm
+          line={line}
+          pending={pending}
+          onSubmit={onDiscount}
+          errors={discountErrors}
+        />
+        {discount > 0 && discountLabel && (
+          <div className="mt-1 text-xs text-red-700">
+            −{formatEur(discount)} ({discountLabel})
+          </div>
+        )}
+      </td>
+      <td className="px-4 py-3 text-right tabular-nums">
+        {discount > 0 ? (
+          <>
+            <div className="text-xs text-zinc-400 line-through">{formatEur(gross)}</div>
+            <div className="font-medium">{formatEur(lineTotal)}</div>
+          </>
+        ) : (
+          <div className="font-medium">{formatEur(lineTotal)}</div>
+        )}
+      </td>
+      <td className="px-4 py-3">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => {
+            if (!confirm('Regel verwijderen?')) return;
+            onDelete();
+          }}
+          className="text-xs text-red-600 hover:underline"
+        >
+          Verwijder
+        </button>
+      </td>
+    </tr>
+  );
+}
+
 export default function ProjectLinesSection({
   projectId,
   lines,
@@ -357,6 +444,15 @@ export default function ProjectLinesSection({
   const [catalogQuery, setCatalogQuery] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, FieldErrors | undefined>>({});
   const total = projectMaterialTotal(lines);
+
+  const lineGroups = useMemo(() => {
+    return groupProjectLinesByCategory(lines).map((group) => ({
+      ...group,
+      items: [...group.items].sort((a, b) =>
+        projectLineName(a).localeCompare(projectLineName(b), 'nl')
+      ),
+    }));
+  }, [lines]);
 
   const stockWarnings = [
     ...new Set(
@@ -465,111 +561,58 @@ export default function ProjectLinesSection({
       {lines.length === 0 ? (
         <p className="text-sm text-zinc-500">Nog geen materiaal op dit project.</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-          <table className="w-full min-w-[920px] text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
-              <tr>
-                <th className="px-4 py-2">Materiaal</th>
-                <th className="px-4 py-2">Aantal</th>
-                <th className="px-4 py-2">Periode</th>
-                <th className="px-4 py-2">Dagen</th>
-                <th className="px-4 py-2">Korting</th>
-                <th className="px-4 py-2 text-right">Totaal</th>
-                <th className="px-4 py-2" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {lines.map((line) => {
-                const { days, gross, discount, total: lineTotal } = lineBreakdown(line);
-                const category = projectLineCategory(line);
-                const discountLabel = formatDiscountLabel(line);
-                return (
-                  <tr key={line.id}>
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{projectLineName(line)}</div>
-                      {category && <div className="text-xs text-zinc-500">{category}</div>}
-                      {isCustomProjectLine(line) && (
-                        <div className="text-xs text-zinc-500">
-                          {formatEur(projectLineDailyRate(line))}/dag
-                        </div>
-                      )}
-                      {isExternalRentalLine(line) && (
-                        <div className="text-xs text-amber-700">Extern inhuur</div>
-                      )}
-                      <details className="mt-2">
-                        <summary className="cursor-pointer text-xs text-zinc-600">Bewerken</summary>
-                        <LineEditForm
-                          line={line}
-                          pending={pending}
-                          onSubmit={(fd) => submitLineEdit(line.id, fd)}
-                          errors={formErrors[`edit-${line.id}`]}
-                        />
-                      </details>
-                    </td>
-                    <td className="px-4 py-3">{line.quantity}</td>
-                    <td className="px-4 py-3 text-zinc-600">
-                      {toDateInputValue(line.rentalStart)} → {toDateInputValue(line.rentalEnd)}
-                    </td>
-                    <td className="px-4 py-3">{days}</td>
-                    <td className="px-4 py-3">
-                      <LineDiscountForm
-                        line={line}
-                        pending={pending}
-                        onSubmit={(fd) => submitLineDiscount(line.id, fd)}
-                        errors={formErrors[`discount-${line.id}`]}
-                      />
-                      {discount > 0 && discountLabel && (
-                        <div className="mt-1 text-xs text-red-700">
-                          −{formatEur(discount)} ({discountLabel})
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums">
-                      {discount > 0 ? (
-                        <>
-                          <div className="text-xs text-zinc-400 line-through">
-                            {formatEur(gross)}
-                          </div>
-                          <div className="font-medium">{formatEur(lineTotal)}</div>
-                        </>
-                      ) : (
-                        <div className="font-medium">{formatEur(lineTotal)}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        disabled={pending}
-                        onClick={() => {
-                          if (!confirm('Regel verwijderen?')) return;
-                          startTransition(() => {
-                            void (async () => {
-                              await deleteProjectLine(line.id, projectId);
-                              router.refresh();
-                            })();
-                          });
-                        }}
-                        className="text-xs text-red-600 hover:underline"
-                      >
-                        Verwijder
-                      </button>
-                    </td>
+        <div className="space-y-6">
+          {lineGroups.map((group) => (
+            <div
+              key={group.key}
+              className="overflow-x-auto rounded-lg border border-zinc-200 bg-white"
+            >
+              <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-2">
+                <h3 className="text-sm font-semibold text-zinc-800">
+                  {group.name}{' '}
+                  <span className="font-normal text-zinc-500">({group.items.length})</span>
+                </h3>
+              </div>
+              <table className="w-full min-w-[920px] text-left text-sm">
+                <thead className="border-b border-zinc-200 text-zinc-600">
+                  <tr>
+                    <th className="px-4 py-2">Materiaal</th>
+                    <th className="px-4 py-2">Aantal</th>
+                    <th className="px-4 py-2">Periode</th>
+                    <th className="px-4 py-2">Dagen</th>
+                    <th className="px-4 py-2">Korting</th>
+                    <th className="px-4 py-2 text-right">Totaal</th>
+                    <th className="px-4 py-2" />
                   </tr>
-                );
-              })}
-            </tbody>
-            <tfoot className="border-t border-zinc-200 bg-zinc-50">
-              <tr>
-                <td colSpan={5} className="px-4 py-3 text-right font-semibold">
-                  Totaal materiaal
-                </td>
-                <td className="px-4 py-3 text-right text-lg font-semibold tabular-nums">
-                  {formatEur(total)}
-                </td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {group.items.map((line) => (
+                    <ProjectLineRow
+                      key={line.id}
+                      line={line}
+                      pending={pending}
+                      editErrors={formErrors[`edit-${line.id}`]}
+                      discountErrors={formErrors[`discount-${line.id}`]}
+                      onEdit={(fd) => submitLineEdit(line.id, fd)}
+                      onDiscount={(fd) => submitLineDiscount(line.id, fd)}
+                      onDelete={() => {
+                        startTransition(() => {
+                          void (async () => {
+                            await deleteProjectLine(line.id, projectId);
+                            router.refresh();
+                          })();
+                        });
+                      }}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+          <div className="flex justify-end rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+            <span className="text-sm font-semibold text-zinc-700">Totaal materiaal</span>
+            <span className="ml-4 text-lg font-semibold tabular-nums">{formatEur(total)}</span>
+          </div>
         </div>
       )}
     </div>
