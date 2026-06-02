@@ -216,6 +216,7 @@ export const projectLineSchema = z
     projectId: z.string().min(1),
     lineType: z.enum(['catalog', 'custom']).default('catalog'),
     equipmentId: z.string().optional(),
+    categoryId: z.string().optional(),
     customName: z.string().optional(),
     customDailyRate: z.coerce.number().optional(),
     quantity: z.coerce.number().int().positive('Aantal moet minimaal 1 zijn'),
@@ -247,6 +248,13 @@ export const projectLineSchema = z
           path: ['customName'],
         });
       }
+      if (!data.categoryId?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Kies een categorie',
+          path: ['categoryId'],
+        });
+      }
       if (
         data.customDailyRate == null ||
         !Number.isFinite(data.customDailyRate) ||
@@ -266,6 +274,7 @@ export const projectLineSchema = z
     rentalStart: data.rentalStart,
     rentalEnd: data.rentalEnd,
     equipmentId: data.lineType === 'catalog' ? data.equipmentId!.trim() : null,
+    categoryId: data.lineType === 'custom' ? data.categoryId!.trim() : null,
     customName: data.lineType === 'custom' ? data.customName!.trim() : null,
     customDailyRate: data.lineType === 'custom' ? data.customDailyRate! : null,
     discountType: data.discountType,

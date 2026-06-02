@@ -1,10 +1,19 @@
 import type { ProjectLineRecord } from '@/lib/pricing';
 
 export const FALLBACK_CATEGORY_NAME = 'Overig';
-export const CUSTOM_LINE_CATEGORY_NAME = 'Tijdelijk';
 
 function isCustomLine(line: ProjectLineRecord): boolean {
   return line.customName != null && line.customName.trim() !== '';
+}
+
+function lineSortName(line: ProjectLineRecord): string {
+  if (isCustomLine(line)) return line.customName!.trim();
+  return line.equipment?.name ?? '';
+}
+
+function resolveLineCategory(line: ProjectLineRecord): CategoryRef | null {
+  if (isCustomLine(line)) return line.category ?? null;
+  return line.equipment?.category ?? null;
 }
 
 export type CategoryRef = {
@@ -56,20 +65,10 @@ export function groupProjectLinesByCategory(
   const map = new Map<string, CategoryGroup<ProjectLineRecord>>();
 
   for (const line of lines) {
-    let key: string;
-    let name: string;
-    let sortOrder: number;
-
-    if (isCustomLine(line)) {
-      key = '__custom__';
-      name = CUSTOM_LINE_CATEGORY_NAME;
-      sortOrder = 998;
-    } else {
-      const cat = line.equipment?.category;
-      key = cat?.id ?? '__none__';
-      name = categoryDisplayName(cat);
-      sortOrder = cat?.sortOrder ?? 999;
-    }
+    const cat = resolveLineCategory(line);
+    const key = cat?.id ?? '__none__';
+    const name = categoryDisplayName(cat);
+    const sortOrder = cat?.sortOrder ?? 999;
 
     if (!map.has(key)) {
       map.set(key, { key, name, sortOrder, items: [] });
@@ -77,7 +76,12 @@ export function groupProjectLinesByCategory(
     map.get(key)!.items.push(line);
   }
 
-  return [...map.values()].sort(
-    (a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'nl')
-  );
+  return [...map.values()]
+    .map((group) => ({
+      ...group,
+      items: [...group.items].sort((a, b) =>
+        lineSortName(a).localeCompare(lineSortName(b), 'nl')
+      ),
+    }))
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'nl'));
 }

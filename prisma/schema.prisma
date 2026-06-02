@@ -128,12 +128,13 @@ model CrewShiftStaff {
 }
 
 model EquipmentCategory {
-  id        String      @id @default(cuid())
-  name      String      @unique
-  sortOrder Int         @default(0)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  equipment Equipment[]
+  id           String        @id @default(cuid())
+  name         String        @unique
+  sortOrder    Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  equipment    Equipment[]
+  projectLines ProjectLine[]
 }
 
 model Equipment {
@@ -155,6 +156,8 @@ model ProjectLine {
   project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   equipmentId String?
   equipment   Equipment? @relation(fields: [equipmentId], references: [id])
+  categoryId  String?
+  category    EquipmentCategory? @relation(fields: [categoryId], references: [id])
   customName       String?
   customDailyRate  Float?
   quantity    Int

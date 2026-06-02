@@ -21,6 +21,7 @@ const baseLine = {
   customDailyRate: null,
   discountType: null as const,
   discountValue: null,
+  category: null,
   equipment: {
     id: 'eq-1',
     name: 'Speaker',

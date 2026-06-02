@@ -1,4 +1,4 @@
-import { CUSTOM_LINE_CATEGORY_NAME, categoryDisplayName } from '@/lib/equipment-categories';
+import { categoryDisplayName } from '@/lib/equipment-categories';
 
 export type DiscountType = 'PERCENTAGE' | 'AMOUNT';
 
@@ -83,6 +83,11 @@ export type ProjectLineRecord = {
   customDailyRate: number | null;
   discountType: DiscountType | null;
   discountValue: number | null;
+  category: {
+    id: string;
+    name: string;
+    sortOrder: number;
+  } | null;
   equipment: {
     id: string;
     name: string;
@@ -118,7 +123,9 @@ export function projectLineName(line: ProjectLineRecord): string {
 }
 
 export function projectLineCategory(line: ProjectLineRecord): string | null {
-  if (isCustomProjectLine(line)) return CUSTOM_LINE_CATEGORY_NAME;
+  if (isCustomProjectLine(line)) {
+    return line.category ? categoryDisplayName(line.category) : null;
+  }
   return categoryDisplayName(line.equipment?.category);
 }
 

@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import { getProjectById } from '@/lib/project-queries';
 import { formatDateNl } from '@/lib/dates';
-import { lineBreakdown, formatEur, projectLineName, projectLineDailyRate, formatDiscountLabel } from '@/lib/pricing';
+import { formatEur } from '@/lib/pricing';
+import MaterialQuoteByCategory from '@/components/print/MaterialQuoteByCategory';
 import {
   computeProjectTotals,
   quoteExtraLines,
@@ -100,51 +101,9 @@ export default async function OffertePrintPage({
       </section>
 
       {project.lines.length > 0 && (
-        <>
-          <h2 className="mb-2 text-sm font-semibold">Materiaal</h2>
-          <table className="mb-6 w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b-2 border-zinc-800">
-                <th className="py-2 text-left">Omschrijving</th>
-                <th className="py-2 text-right">Aantal</th>
-                <th className="py-2 text-right">Dagen</th>
-                <th className="py-2 text-right">Dagtarief</th>
-                <th className="py-2 text-right">Totaal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {project.lines.map((line) => {
-                const { days, gross, discount, total: lineTotal } = lineBreakdown(line);
-                const discountLabel = formatDiscountLabel(line);
-                return (
-                  <tr key={line.id} className="border-b border-zinc-200">
-                    <td className="py-2">
-                      {projectLineName(line)}
-                      {discount > 0 && discountLabel && (
-                        <div className="text-xs text-zinc-500">
-                          Korting: {discountLabel} (−{formatEur(discount)})
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-2 text-right">{line.quantity}</td>
-                    <td className="py-2 text-right">{days}</td>
-                    <td className="py-2 text-right">{formatEur(projectLineDailyRate(line))}</td>
-                    <td className="py-2 text-right font-medium">
-                      {discount > 0 ? (
-                        <>
-                          <span className="text-zinc-400 line-through">{formatEur(gross)}</span>{' '}
-                          {formatEur(lineTotal)}
-                        </>
-                      ) : (
-                        formatEur(lineTotal)
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </>
+        <div className="mb-6">
+          <MaterialQuoteByCategory lines={project.lines} />
+        </div>
       )}
 
       {extraLines.length > 0 && (

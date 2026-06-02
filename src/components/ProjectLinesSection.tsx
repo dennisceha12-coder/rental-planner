@@ -25,16 +25,46 @@ import { toDateInputValue } from '@/lib/dates';
 import { groupEquipmentByCategory, groupProjectLinesByCategory } from '@/lib/equipment-categories';
 import type { FieldErrors } from '@/lib/form-errors';
 
+type Category = {
+  id: string;
+  name: string;
+  sortOrder: number;
+};
+
 type CatalogEquipment = {
   id: string;
   name: string;
   dailyRate: number;
   isExternalRental: boolean;
   categoryId: string | null;
-  category: { id: string; name: string; sortOrder: number } | null;
+  category: Category | null;
 };
 
 type Line = ProjectLineRecord & { id: string; projectId: string };
+
+function CategorySelect({
+  categories,
+  defaultValue,
+  className = 'rounded border border-zinc-300 px-3 py-2',
+}: {
+  categories: Category[];
+  defaultValue?: string | null;
+  className?: string;
+}) {
+  return (
+    <label className="grid gap-1 text-sm">
+      Categorie *
+      <select name="categoryId" required defaultValue={defaultValue ?? ''} className={className}>
+        <option value="">Kies…</option>
+        {categories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 function DiscountFields({
   discountType,
@@ -83,6 +113,7 @@ function LineForm({
   projectId,
   lineType,
   equipment,
+  categories,
   defaultStart,
   defaultEnd,
   pending,
@@ -94,6 +125,7 @@ function LineForm({
   projectId: string;
   lineType: 'catalog' | 'custom';
   equipment?: CatalogEquipment[];
+  categories: Category[];
   defaultStart?: string;
   defaultEnd?: string;
   pending: boolean;
@@ -154,6 +186,7 @@ function LineForm({
                 className="rounded border border-zinc-300 px-3 py-2"
               />
             </label>
+            <CategorySelect categories={categories} />
             <label className="grid gap-1 text-sm">
               Dagtarief (€)
               <input
@@ -162,7 +195,7 @@ function LineForm({
                 min={0}
                 step={0.01}
                 required
-                placeholder="0,00"
+                placeholder="0 voor gratis"
                 className="rounded border border-zinc-300 px-3 py-2"
               />
             </label>
@@ -221,11 +254,13 @@ function LineForm({
 
 function LineEditForm({
   line,
+  categories,
   pending,
   onSubmit,
   errors,
 }: {
   line: Line;
+  categories: Category[];
   pending: boolean;
   onSubmit: (fd: FormData) => void;
   errors?: FieldErrors;
@@ -250,6 +285,11 @@ function LineEditForm({
                 className="rounded border border-zinc-300 px-2 py-1"
               />
             </label>
+            <CategorySelect
+              categories={categories}
+              defaultValue={line.categoryId}
+              className="rounded border border-zinc-300 px-2 py-1"
+            />
             <label className="grid gap-1 text-xs">
               Dagtarief (€)
               <input
@@ -340,6 +380,7 @@ function LineDiscountForm({
 
 function ProjectLineRow({
   line,
+  categories,
   pending,
   editErrors,
   discountErrors,
@@ -348,6 +389,7 @@ function ProjectLineRow({
   onDelete,
 }: {
   line: Line;
+  categories: Category[];
   pending: boolean;
   editErrors?: FieldErrors;
   discountErrors?: FieldErrors;
@@ -375,6 +417,7 @@ function ProjectLineRow({
           <summary className="cursor-pointer text-xs text-zinc-600">Bewerken</summary>
           <LineEditForm
             line={line}
+            categories={categories}
             pending={pending}
             onSubmit={onEdit}
             errors={editErrors}
@@ -430,12 +473,14 @@ export default function ProjectLinesSection({
   projectId,
   lines,
   equipment,
+  categories,
   defaultStart,
   defaultEnd,
 }: {
   projectId: string;
   lines: Line[];
   equipment: CatalogEquipment[];
+  categories: Category[];
   defaultStart?: string;
   defaultEnd?: string;
 }) {
@@ -445,14 +490,7 @@ export default function ProjectLinesSection({
   const [formErrors, setFormErrors] = useState<Record<string, FieldErrors | undefined>>({});
   const total = projectMaterialTotal(lines);
 
-  const lineGroups = useMemo(() => {
-    return groupProjectLinesByCategory(lines).map((group) => ({
-      ...group,
-      items: [...group.items].sort((a, b) =>
-        projectLineName(a).localeCompare(projectLineName(b), 'nl')
-      ),
-    }));
-  }, [lines]);
+  const lineGroups = useMemo(() => groupProjectLinesByCategory(lines), [lines]);
 
   const stockWarnings = [
     ...new Set(
@@ -531,6 +569,7 @@ export default function ProjectLinesSection({
           projectId={projectId}
           lineType="catalog"
           equipment={equipment}
+          categories={categories}
           defaultStart={defaultStart}
           defaultEnd={defaultEnd}
           pending={pending}
@@ -550,6 +589,7 @@ export default function ProjectLinesSection({
         <LineForm
           projectId={projectId}
           lineType="custom"
+          categories={categories}
           defaultStart={defaultStart}
           defaultEnd={defaultEnd}
           pending={pending}
@@ -590,6 +630,7 @@ export default function ProjectLinesSection({
                     <ProjectLineRow
                       key={line.id}
                       line={line}
+                      categories={categories}
                       pending={pending}
                       editErrors={formErrors[`edit-${line.id}`]}
                       discountErrors={formErrors[`discount-${line.id}`]}

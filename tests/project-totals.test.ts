@@ -39,6 +39,7 @@ describe('project-totals', () => {
         customDailyRate: null,
         discountType: 'PERCENTAGE' as const,
         discountValue: 10,
+        category: null,
         equipment: {
           id: 'eq',
           name: 'Item',

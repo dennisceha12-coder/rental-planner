@@ -30,11 +30,14 @@ export default async function ProjectPage({
   const project = await getProjectById(id);
   if (!project) notFound();
 
-  const [clients, equipment, staffList, company] = await Promise.all([
+  const [clients, equipment, categories, staffList, company] = await Promise.all([
     prisma.client.findMany({ orderBy: { name: 'asc' } }),
     prisma.equipment.findMany({
       include: { category: true },
       orderBy: [{ category: { sortOrder: 'asc' } }, { name: 'asc' }],
+    }),
+    prisma.equipmentCategory.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     }),
     prisma.staff.findMany({ orderBy: { name: 'asc' } }),
     getCompanySettings(),
@@ -135,6 +138,7 @@ export default async function ProjectPage({
             discountValue: l.discountValue,
           }))}
           equipment={equipment}
+          categories={categories}
           defaultStart={defaultStart}
           defaultEnd={defaultEnd}
         />

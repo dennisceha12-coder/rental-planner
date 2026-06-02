@@ -126,10 +126,16 @@ export async function updateEquipmentCategory(id: string, formData: FormData) {
 }
 
 export async function deleteEquipmentCategory(id: string) {
-  const used = await prisma.equipment.count({ where: { categoryId: id } });
-  if (used > 0) {
+  const [equipmentUsed, linesUsed] = await Promise.all([
+    prisma.equipment.count({ where: { categoryId: id } }),
+    prisma.projectLine.count({ where: { categoryId: id } }),
+  ]);
+  if (equipmentUsed > 0 || linesUsed > 0) {
+    const parts: string[] = [];
+    if (equipmentUsed > 0) parts.push(`${equipmentUsed} catalogusitem(s)`);
+    if (linesUsed > 0) parts.push(`${linesUsed} projectregel(s)`);
     return {
-      error: `Categorie is gekoppeld aan ${used} materiaalitem(s) en kan niet worden verwijderd.`,
+      error: `Categorie is gekoppeld aan ${parts.join(' en ')} en kan niet worden verwijderd.`,
     };
   }
   await prisma.equipmentCategory.delete({ where: { id } });
@@ -329,6 +335,7 @@ export async function duplicateProject(id: string) {
       lines: {
         create: source.lines.map((line) => ({
           equipmentId: line.equipmentId,
+          categoryId: line.categoryId,
           customName: line.customName,
           customDailyRate: line.customDailyRate,
           quantity: line.quantity,
@@ -395,6 +402,7 @@ export async function addProjectLine(formData: FormData) {
     projectId: formData.get('projectId'),
     lineType: formData.get('lineType') ?? 'catalog',
     equipmentId: formData.get('equipmentId') || undefined,
+    categoryId: formData.get('categoryId') || undefined,
     customName: formData.get('customName') || undefined,
     customDailyRate: formData.get('customDailyRate') || undefined,
     quantity: formData.get('quantity'),
@@ -417,6 +425,7 @@ export async function addProjectLine(formData: FormData) {
   const {
     projectId,
     equipmentId,
+    categoryId,
     customName,
     customDailyRate,
     quantity,
@@ -427,6 +436,7 @@ export async function addProjectLine(formData: FormData) {
     data: {
       projectId,
       equipmentId,
+      categoryId,
       customName,
       customDailyRate,
       quantity,
@@ -445,6 +455,7 @@ export async function updateProjectLine(lineId: string, formData: FormData) {
     projectId: formData.get('projectId'),
     lineType: formData.get('lineType') ?? 'catalog',
     equipmentId: formData.get('equipmentId') || undefined,
+    categoryId: formData.get('categoryId') || undefined,
     customName: formData.get('customName') || undefined,
     customDailyRate: formData.get('customDailyRate') || undefined,
     quantity: formData.get('quantity'),
@@ -468,6 +479,7 @@ export async function updateProjectLine(lineId: string, formData: FormData) {
     where: { id: lineId },
     data: {
       equipmentId: parsed.data.equipmentId,
+      categoryId: parsed.data.categoryId,
       customName: parsed.data.customName,
       customDailyRate: parsed.data.customDailyRate,
       quantity: parsed.data.quantity,

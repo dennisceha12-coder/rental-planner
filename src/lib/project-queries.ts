@@ -6,6 +6,7 @@ export const projectInclude = {
   client: true,
   lines: {
     include: {
+      category: true,
       equipment: { include: { category: true } },
     },
     orderBy: { rentalStart: 'asc' as const },
@@ -45,7 +46,9 @@ export async function listProjects(status?: string, search?: string) {
     where: Object.keys(where).length > 0 ? where : undefined,
     include: {
       client: true,
-      lines: { include: { equipment: { include: { category: true } } } },
+      lines: {
+        include: { category: true, equipment: { include: { category: true } } },
+      },
       crewShifts: {
         include: { staffAssignments: { include: { staff: true } } },
       },
