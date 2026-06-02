@@ -3,6 +3,10 @@ import {
   projectMaterialTotal,
   projectMaterialGrossTotal,
   projectLineDiscountTotal,
+  projectExternalRentalMaterialTotal,
+  projectExternalRentalGrossTotal,
+  projectOwnMaterialTotal,
+  externalRentalLines,
   type LineWithEquipment,
 } from '@/lib/pricing';
 import {
@@ -32,6 +36,10 @@ export type ProjectTotals = {
   materialGross: number;
   lineDiscountTotal: number;
   material: number;
+  externalRentalMaterial: number;
+  externalRentalMaterialGross: number;
+  externalRentalLineCount: number;
+  ownMaterial: number;
   laborByPhase: Record<CrewPhase, number>;
   labor: number;
   transport: number;
@@ -93,6 +101,10 @@ export function computeProjectTotals(
   const materialGross = projectMaterialGrossTotal(lines);
   const lineDiscountTotal = projectLineDiscountTotal(lines);
   const material = projectMaterialTotal(lines);
+  const externalRentalMaterial = projectExternalRentalMaterialTotal(lines);
+  const externalRentalMaterialGross = projectExternalRentalGrossTotal(lines);
+  const externalRentalLineCount = externalRentalLines(lines).length;
+  const ownMaterial = projectOwnMaterialTotal(lines);
   const laborByPhase = crewCostByPhase(costs.crewShifts, costs.hourlyRate);
   const labor = crewTotalCost(costs.crewShifts, costs.hourlyRate);
   const transport = transportTotal(costs);
@@ -105,6 +117,10 @@ export function computeProjectTotals(
     materialGross,
     lineDiscountTotal,
     material,
+    externalRentalMaterial,
+    externalRentalMaterialGross,
+    externalRentalLineCount,
+    ownMaterial,
     laborByPhase,
     labor,
     transport,

@@ -76,6 +76,33 @@ export default function ProjectFinancialOverview({
             <dt className="text-zinc-600">Materiaal</dt>
             <dd className="tabular-nums font-medium">{formatEur(t.material)}</dd>
           </div>
+          {t.externalRentalLineCount > 0 && (
+            <div className="ml-3 space-y-1 border-l-2 border-amber-200 pl-3">
+              <div className="flex justify-between gap-4 text-zinc-600">
+                <dt>
+                  Waarvan ingehuurd
+                  <span className="text-zinc-400">
+                    {' '}
+                    ({t.externalRentalLineCount}{' '}
+                    {t.externalRentalLineCount === 1 ? 'regel' : 'regels'})
+                  </span>
+                </dt>
+                <dd className="tabular-nums font-medium text-amber-900">
+                  {formatEur(t.externalRentalMaterial)}
+                </dd>
+              </div>
+              {t.externalRentalMaterialGross > t.externalRentalMaterial && (
+                <div className="flex justify-between gap-4 text-xs text-zinc-500">
+                  <dt>Bruto ingehuur</dt>
+                  <dd className="tabular-nums">{formatEur(t.externalRentalMaterialGross)}</dd>
+                </div>
+              )}
+              <div className="flex justify-between gap-4 text-xs text-zinc-500">
+                <dt>Eigen materiaal</dt>
+                <dd className="tabular-nums">{formatEur(t.ownMaterial)}</dd>
+              </div>
+            </div>
+          )}
           {crewPhases.map((p) => (
             <div key={p.phase} className="flex justify-between gap-4 text-zinc-600">
               <dt>
@@ -121,6 +148,12 @@ export default function ProjectFinancialOverview({
             <dd className="text-lg font-semibold tabular-nums">{formatEur(vat.totalInclVat)}</dd>
           </div>
         </dl>
+        {t.externalRentalLineCount > 0 && (
+          <p className="mt-3 text-xs text-zinc-500">
+            Ingehuurd materiaal is je interne kostenpost (catalogusregels met &quot;Extern
+            inhuur&quot;). Het staat ook in het materiaaltotaal op de offerte.
+          </p>
+        )}
       </section>
 
       <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">

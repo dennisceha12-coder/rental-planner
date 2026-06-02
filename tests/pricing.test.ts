@@ -5,6 +5,8 @@ import {
   lineNetTotal,
   projectLineDiscountTotal,
   projectMaterialTotal,
+  projectExternalRentalMaterialTotal,
+  projectOwnMaterialTotal,
   rentalDays,
 } from '@/lib/pricing';
 
@@ -74,5 +76,17 @@ describe('pricing', () => {
     expect(computeDiscountAmount(1000, { discountType: 'PERCENTAGE', discountValue: 150 })).toBe(
       1000
     );
+  });
+
+  it('sums external rental material separately from own stock', () => {
+    const external = {
+      ...baseLine,
+      id: 'line-ext',
+      equipment: { ...baseLine.equipment!, dailyRate: 200, isExternalRental: true },
+    };
+    const lines = [baseLine, external];
+    expect(projectExternalRentalMaterialTotal(lines)).toBe(1200);
+    expect(projectOwnMaterialTotal(lines)).toBe(600);
+    expect(projectMaterialTotal(lines)).toBe(1800);
   });
 });

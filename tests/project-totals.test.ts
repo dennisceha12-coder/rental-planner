@@ -66,6 +66,64 @@ describe('project-totals', () => {
     expect(totals.grandTotal).toBe(320);
   });
 
+  it('tracks external rental material in totals', () => {
+    const lines = [
+      {
+        id: 'l1',
+        quantity: 1,
+        rentalStart: start,
+        rentalEnd: end,
+        equipmentId: 'eq-own',
+        customName: null,
+        customDailyRate: null,
+        discountType: null,
+        discountValue: null,
+        category: null,
+        equipment: {
+          id: 'eq-own',
+          name: 'Speaker',
+          dailyRate: 100,
+          stockQty: null,
+          isExternalRental: false,
+          category: null,
+        },
+      },
+      {
+        id: 'l2',
+        quantity: 2,
+        rentalStart: start,
+        rentalEnd: end,
+        equipmentId: 'eq-rent',
+        customName: null,
+        customDailyRate: null,
+        discountType: null,
+        discountValue: null,
+        category: null,
+        equipment: {
+          id: 'eq-rent',
+          name: 'Subwoofer gehuurd',
+          dailyRate: 50,
+          stockQty: null,
+          isExternalRental: true,
+          category: null,
+        },
+      },
+    ];
+    const totals = computeProjectTotals(lines, {
+      hourlyRate: null,
+      totalDiscountAmount: null,
+      crewShifts: [],
+      transportType: 'FIXED',
+      transportKm: null,
+      transportRatePerKm: null,
+      transportFixedAmount: null,
+    });
+    expect(totals.externalRentalLineCount).toBe(1);
+    expect(totals.externalRentalMaterial).toBe(300);
+    expect(totals.ownMaterial).toBe(300);
+    expect(totals.material).toBe(600);
+  });
+
   it('caps total discount at subtotal', () => {
     expect(computeTotalDiscountAmount(100, 250)).toBe(100);
   });

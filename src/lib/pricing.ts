@@ -163,6 +163,18 @@ export function projectMaterialTotal(lines: ProjectLineRecord[]): number {
   return lines.reduce((sum, line) => sum + lineNetTotal(line), 0);
 }
 
+export function projectExternalRentalGrossTotal(lines: ProjectLineRecord[]): number {
+  return externalRentalLines(lines).reduce((sum, line) => sum + lineGrossTotal(line), 0);
+}
+
+export function projectExternalRentalMaterialTotal(lines: ProjectLineRecord[]): number {
+  return externalRentalLines(lines).reduce((sum, line) => sum + lineNetTotal(line), 0);
+}
+
+export function projectOwnMaterialTotal(lines: ProjectLineRecord[]): number {
+  return Math.max(0, projectMaterialTotal(lines) - projectExternalRentalMaterialTotal(lines));
+}
+
 export function lineBreakdown(line: ProjectLineRecord) {
   const days = rentalDays(line.rentalStart, line.rentalEnd);
   const gross = lineGrossTotal(line);
