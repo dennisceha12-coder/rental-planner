@@ -166,31 +166,71 @@ export default function ProjectForm({
           />
         </label>
 
-        <label className="grid gap-1 text-sm">
-          Load-in tijd
-          <input
-            name="loadInTime"
-            placeholder="08:00"
-            defaultValue={project?.loadInTime ?? ''}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          Show tijd
-          <input
-            name="showTime"
-            defaultValue={project?.showTime ?? ''}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          Load-out tijd
-          <input
-            name="loadOutTime"
-            defaultValue={project?.loadOutTime ?? ''}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
+        <div className="grid gap-2 sm:col-span-2 sm:grid-cols-3">
+          <fieldset className="grid gap-2 rounded border border-zinc-200 p-3">
+            <legend className="px-1 text-xs font-medium text-zinc-600">Load-in tijden</legend>
+            <label className="grid gap-1 text-sm">
+              Van
+              <input
+                name="loadInTime"
+                placeholder="08:00"
+                defaultValue={project?.loadInTime ?? ''}
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              Tot
+              <input
+                name="loadInEndTime"
+                placeholder="17:00"
+                defaultValue={project?.loadInEndTime ?? ''}
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </fieldset>
+          <fieldset className="grid gap-2 rounded border border-zinc-200 p-3">
+            <legend className="px-1 text-xs font-medium text-zinc-600">Show tijden</legend>
+            <label className="grid gap-1 text-sm">
+              Van
+              <input
+                name="showTime"
+                placeholder="14:00"
+                defaultValue={project?.showTime ?? ''}
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              Tot
+              <input
+                name="showEndTime"
+                placeholder="23:00"
+                defaultValue={project?.showEndTime ?? ''}
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </fieldset>
+          <fieldset className="grid gap-2 rounded border border-zinc-200 p-3">
+            <legend className="px-1 text-xs font-medium text-zinc-600">Load-out tijden</legend>
+            <label className="grid gap-1 text-sm">
+              Van
+              <input
+                name="loadOutTime"
+                placeholder="08:00"
+                defaultValue={project?.loadOutTime ?? ''}
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+            <label className="grid gap-1 text-sm">
+              Tot
+              <input
+                name="loadOutEndTime"
+                placeholder="14:00"
+                defaultValue={project?.loadOutEndTime ?? ''}
+                className="rounded border border-zinc-300 px-3 py-2"
+              />
+            </label>
+          </fieldset>
+        </div>
 
         <div className="sm:col-span-2 mt-2 border-t border-zinc-200 pt-4">
           <h3 className="mb-3 text-sm font-semibold text-zinc-900">Transport (offerte)</h3>

@@ -73,9 +73,12 @@ model Project {
   loadIn       DateTime?
   showDate     DateTime?
   loadOut      DateTime?
-  loadInTime   String?
-  showTime     String?
-  loadOutTime  String?
+  loadInTime     String?
+  loadInEndTime  String?
+  showTime       String?
+  showEndTime    String?
+  loadOutTime    String?
+  loadOutEndTime String?
   siteContact  String?
   parkingNotes String?
   notes        String?

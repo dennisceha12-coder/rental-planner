@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getProjectById } from '@/lib/project-queries';
-import { formatDateNl } from '@/lib/dates';
+import { formatDateNl, formatTimeRange } from '@/lib/dates';
 import { formatEur } from '@/lib/pricing';
 import MaterialQuoteByCategory from '@/components/print/MaterialQuoteByCategory';
 import {
@@ -88,14 +88,22 @@ export default async function OffertePrintPage({
         {project.loadIn && (
           <p>
             Opbouw: {formatDateNl(project.loadIn)}
-            {project.loadInTime ? ` ${project.loadInTime}` : ''}
+            {(project.loadInTime || project.loadInEndTime) &&
+              ` · ${formatTimeRange(project.loadInTime, project.loadInEndTime)}`}
           </p>
         )}
-        {project.showDate && <p>Show: {formatDateNl(project.showDate)}</p>}
+        {project.showDate && (
+          <p>
+            Show: {formatDateNl(project.showDate)}
+            {(project.showTime || project.showEndTime) &&
+              ` · ${formatTimeRange(project.showTime, project.showEndTime)}`}
+          </p>
+        )}
         {project.loadOut && (
           <p>
             Afbouw: {formatDateNl(project.loadOut)}
-            {project.loadOutTime ? ` ${project.loadOutTime}` : ''}
+            {(project.loadOutTime || project.loadOutEndTime) &&
+              ` · ${formatTimeRange(project.loadOutTime, project.loadOutEndTime)}`}
           </p>
         )}
       </section>

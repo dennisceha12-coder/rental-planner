@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "loadInEndTime" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "showEndTime" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "loadOutEndTime" TEXT;

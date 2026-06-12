@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getProjectById } from '@/lib/project-queries';
-import { formatDateNl } from '@/lib/dates';
+import { formatDateNl, formatTimeRange } from '@/lib/dates';
 import { CREW_PHASE_LABELS, formatStaffLabel, mapCrewShiftFromDb } from '@/lib/crew';
 import PrintHeader from '@/components/print/PrintHeader';
 import PrintToolbar from '@/components/PrintToolbar';
@@ -35,13 +35,20 @@ export default async function CallsheetPrintPage({
             <ScheduleRow
               label="Load-in"
               date={project.loadIn}
-              time={project.loadInTime}
+              startTime={project.loadInTime}
+              endTime={project.loadInEndTime}
             />
-            <ScheduleRow label="Show" date={project.showDate} time={project.showTime} />
+            <ScheduleRow
+              label="Show"
+              date={project.showDate}
+              startTime={project.showTime}
+              endTime={project.showEndTime}
+            />
             <ScheduleRow
               label="Load-out"
               date={project.loadOut}
-              time={project.loadOutTime}
+              startTime={project.loadOutTime}
+              endTime={project.loadOutEndTime}
             />
           </tbody>
         </table>
@@ -123,17 +130,19 @@ function Field({ label, value }: { label: string; value?: string | null }) {
 function ScheduleRow({
   label,
   date,
-  time,
+  startTime,
+  endTime,
 }: {
   label: string;
   date: Date | null;
-  time: string | null;
+  startTime: string | null;
+  endTime: string | null;
 }) {
   return (
     <tr className="border-b border-zinc-100">
       <td className="py-2 font-medium w-28">{label}</td>
       <td className="py-2">{formatDateNl(date)}</td>
-      <td className="py-2">{time ?? '—'}</td>
+      <td className="py-2 tabular-nums">{formatTimeRange(startTime, endTime)}</td>
     </tr>
   );
 }
