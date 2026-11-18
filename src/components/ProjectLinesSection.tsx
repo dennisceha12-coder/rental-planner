@@ -50,7 +50,7 @@ type Line = ProjectLineRecord & { id: string; projectId: string };
 function CategorySelect({
   categories,
   defaultValue,
-  className = 'rounded border border-zinc-300 px-3 py-2',
+  className = 'w-full rounded border border-zinc-300 bg-white px-3 py-2',
 }: {
   categories: Category[];
   defaultValue?: string | null;
@@ -148,22 +148,61 @@ function LineForm({
       <input type="hidden" name="lineType" value={lineType} />
       <FormErrors errors={errors} />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-3">
         {isCatalog ? (
-          <div className="grid gap-1 text-sm sm:col-span-2">
-            <label>
-              Zoek materiaal
+          <label className="grid gap-1 text-sm">
+            Zoek materiaal
+            <input
+              type="search"
+              value={catalogQuery ?? ''}
+              onChange={(e) => onCatalogQueryChange?.(e.target.value)}
+              placeholder="Filter op naam of categorie…"
+              className="w-full rounded border border-zinc-300 bg-white px-3 py-2"
+            />
+          </label>
+        ) : (
+          <div className="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_14rem_9rem]">
+            <label className="grid gap-1 text-sm">
+              Omschrijving
               <input
-                type="search"
-                value={catalogQuery ?? ''}
-                onChange={(e) => onCatalogQueryChange?.(e.target.value)}
-                placeholder="Filter op naam of categorie…"
-                className="mt-1 w-full rounded border border-zinc-300 px-3 py-2"
+                name="customName"
+                type="text"
+                required
+                placeholder="Bijv. extra kabels gehuurd"
+                className="w-full rounded border border-zinc-300 bg-white px-3 py-2"
               />
             </label>
-            <label className="mt-2 grid gap-1">
+            <CategorySelect categories={categories} />
+            <label className="grid gap-1 text-sm">
+              Dagtarief (€)
+              <input
+                name="customDailyRate"
+                type="number"
+                min={0}
+                step={0.01}
+                required
+                placeholder="0 voor gratis"
+                className="w-full rounded border border-zinc-300 bg-white px-3 py-2"
+              />
+            </label>
+          </div>
+        )}
+
+        <div
+          className={
+            isCatalog
+              ? 'grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_5.5rem_10.5rem_10.5rem]'
+              : 'grid items-end gap-3 sm:grid-cols-[5.5rem_10.5rem_10.5rem]'
+          }
+        >
+          {isCatalog && (
+            <label className="grid min-w-0 gap-1 text-sm">
               Materiaal *
-              <select name="equipmentId" required className="rounded border border-zinc-300 px-3 py-2">
+              <select
+                name="equipmentId"
+                required
+                className="w-full rounded border border-zinc-300 bg-white px-3 py-2"
+              >
                 <option value="">Kies…</option>
                 {groupEquipmentByCategory(filtered).map((group) => (
                   <optgroup key={group.key} label={group.name}>
@@ -178,66 +217,39 @@ function LineForm({
                 ))}
               </select>
             </label>
-          </div>
-        ) : (
-          <>
-            <label className="grid gap-1 text-sm sm:col-span-2">
-              Omschrijving
-              <input
-                name="customName"
-                type="text"
-                required
-                placeholder="Bijv. extra kabels gehuurd"
-                className="rounded border border-zinc-300 px-3 py-2"
-              />
-            </label>
-            <CategorySelect categories={categories} />
-            <label className="grid gap-1 text-sm">
-              Dagtarief (€)
-              <input
-                name="customDailyRate"
-                type="number"
-                min={0}
-                step={0.01}
-                required
-                placeholder="0 voor gratis"
-                className="rounded border border-zinc-300 px-3 py-2"
-              />
-            </label>
-          </>
-        )}
-
-        <label className="grid gap-1 text-sm">
-          Aantal
-          <input
-            name="quantity"
-            type="number"
-            min={1}
-            defaultValue={1}
-            required
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          Van
-          <input
-            name="rentalStart"
-            type="date"
-            required
-            defaultValue={defaultStart}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          Tot
-          <input
-            name="rentalEnd"
-            type="date"
-            required
-            defaultValue={defaultEnd}
-            className="rounded border border-zinc-300 px-3 py-2"
-          />
-        </label>
+          )}
+          <label className="grid gap-1 text-sm">
+            Aantal
+            <input
+              name="quantity"
+              type="number"
+              min={1}
+              defaultValue={1}
+              required
+              className="w-full rounded border border-zinc-300 bg-white px-3 py-2"
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            Van
+            <input
+              name="rentalStart"
+              type="date"
+              required
+              defaultValue={defaultStart}
+              className="w-full rounded border border-zinc-300 bg-white px-3 py-2"
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            Tot
+            <input
+              name="rentalEnd"
+              type="date"
+              required
+              defaultValue={defaultEnd}
+              className="w-full rounded border border-zinc-300 bg-white px-3 py-2"
+            />
+          </label>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-end gap-3 border-t border-zinc-200 pt-3">
