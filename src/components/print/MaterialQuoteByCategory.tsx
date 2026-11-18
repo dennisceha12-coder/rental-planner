@@ -1,8 +1,8 @@
+import { Fragment } from 'react';
 import { groupProjectLinesByCategory } from '@/lib/equipment-categories';
 import {
   lineBreakdown,
   formatEur,
-  formatDailyRate,
   projectLineName,
   projectLineDailyRate,
   formatDiscountLabel,
@@ -24,45 +24,55 @@ export default function MaterialQuoteByCategory({
 
   return (
     <>
-      <h2 className="mb-4 text-sm font-semibold">Materiaal</h2>
-      {groups.map((group) => (
-        <section key={group.key} className="mb-6">
-          <h3 className="mb-2 border-b border-zinc-400 text-base font-semibold">{group.name}</h3>
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b-2 border-zinc-800">
-                <th className="py-2 text-left">Omschrijving</th>
-                <th className="py-2 text-right">Aantal</th>
-                <th className="py-2 text-right">Dagen</th>
-                <th className="py-2 text-right">Staffel</th>
-                <th className="py-2 text-right">Dagtarief</th>
-                <th className="py-2 text-right">Totaal</th>
+      <h2 className="mb-3 text-sm font-semibold">Materiaal</h2>
+      <table className="w-full table-fixed border-collapse text-sm">
+        <colgroup>
+          <col />
+          <col className="w-16" />
+          <col className="w-20" />
+          <col className="w-32" />
+        </colgroup>
+        <thead>
+          <tr className="border-b-2 border-zinc-800">
+            <th className="py-2 pr-3 text-left font-medium">Omschrijving</th>
+            <th className="py-2 text-right font-medium">Aantal</th>
+            <th className="py-2 text-right font-medium">Staffel</th>
+            <th className="py-2 text-right font-medium">Totaal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {groups.map((group) => (
+            <Fragment key={group.key}>
+              <tr className="border-b border-zinc-300">
+                <td colSpan={4} className="pb-1 pt-4 text-sm font-semibold">
+                  {group.name}
+                </td>
               </tr>
-            </thead>
-            <tbody>
               {group.items.map((line) => {
-                const { days, factor, gross, discount, total: lineTotal } = lineBreakdown(line, staffel);
+                const { factor, gross, discount, total: lineTotal } = lineBreakdown(line, staffel);
                 const discountLabel = formatDiscountLabel(line);
+                const rate = projectLineDailyRate(line);
                 return (
-                  <tr key={line.id} className="border-b border-zinc-200">
-                    <td className="py-2">
-                      {projectLineName(line)}
+                  <tr key={line.id} className="border-b border-zinc-200 align-top">
+                    <td className="py-2 pr-3">
+                      <div>{projectLineName(line)}</div>
+                      <div className="text-xs text-zinc-500">
+                        {rate === 0 ? 'Gratis' : `${formatEur(rate)}/dag`}
+                      </div>
                       {discount > 0 && discountLabel && (
                         <div className="text-xs text-zinc-500">
                           Korting: {discountLabel} (−{formatEur(discount)})
                         </div>
                       )}
                     </td>
-                    <td className="py-2 text-right">{line.quantity}</td>
-                    <td className="py-2 text-right tabular-nums">{days}</td>
-                    <td className="py-2 text-right tabular-nums">{formatStaffelFactor(factor)}</td>
-                    <td className="py-2 text-right">
-                      {formatDailyRate(projectLineDailyRate(line))}
+                    <td className="whitespace-nowrap py-2 text-right tabular-nums">{line.quantity}</td>
+                    <td className="whitespace-nowrap py-2 text-right tabular-nums">
+                      {formatStaffelFactor(factor)}
                     </td>
-                    <td className="py-2 text-right font-medium">
+                    <td className="whitespace-nowrap py-2 text-right font-medium tabular-nums">
                       {discount > 0 ? (
                         <>
-                          <span className="text-zinc-400 line-through">{formatEur(gross)}</span>{' '}
+                          <span className="font-normal text-zinc-400 line-through">{formatEur(gross)}</span>{' '}
                           {formatEur(lineTotal)}
                         </>
                       ) : (
@@ -72,10 +82,10 @@ export default function MaterialQuoteByCategory({
                   </tr>
                 );
               })}
-            </tbody>
-          </table>
-        </section>
-      ))}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
     </>
   );
 }
