@@ -12,6 +12,23 @@ export function toDateInputValue(d: Date | null | undefined): string {
   return `${y}-${m}-${day}`;
 }
 
+export function formatRentalPeriod(start: Date, end: Date): string {
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const sameMonth = sameYear && start.getMonth() === end.getMonth();
+  const day = (d: Date) => String(d.getDate());
+  const month = (d: Date) => d.toLocaleDateString('nl-NL', { month: 'short' }).replace('.', '');
+  if (start.getTime() === end.getTime() || (sameMonth && start.getDate() === end.getDate())) {
+    return `${day(start)} ${month(start)} ${start.getFullYear()}`;
+  }
+  if (sameMonth) {
+    return `${day(start)}–${day(end)} ${month(end)} ${end.getFullYear()}`;
+  }
+  if (sameYear) {
+    return `${day(start)} ${month(start)} – ${day(end)} ${month(end)} ${end.getFullYear()}`;
+  }
+  return `${day(start)} ${month(start)} ${start.getFullYear()} – ${day(end)} ${month(end)} ${end.getFullYear()}`;
+}
+
 export function formatDateNl(d: Date | null | undefined): string {
   if (!d) return '—';
   return d.toLocaleDateString('nl-NL', {

@@ -26,7 +26,7 @@ import {
   type ProjectLineRecord,
   type RentalStaffel,
 } from '@/lib/pricing';
-import { toDateInputValue } from '@/lib/dates';
+import { formatRentalPeriod, toDateInputValue } from '@/lib/dates';
 import { groupEquipmentByCategory, groupProjectLinesByCategory } from '@/lib/equipment-categories';
 import type { FieldErrors } from '@/lib/form-errors';
 
@@ -421,8 +421,8 @@ function ProjectLineRow({
   const rate = projectLineDailyRate(line);
 
   return (
-    <tr>
-      <td className="px-4 py-3">
+    <tr className="align-top">
+      <td className="px-3 py-2">
         <div className="font-medium">{projectLineName(line)}</div>
         {isCustomProjectLine(line) && (
           <div className="text-xs text-zinc-500">
@@ -432,8 +432,8 @@ function ProjectLineRow({
         {isExternalRentalLine(line) && (
           <div className="text-xs text-amber-700">Extern inhuur</div>
         )}
-        <details className="mt-2">
-          <summary className="cursor-pointer text-xs text-zinc-600">Bewerken</summary>
+        <details className="mt-1">
+          <summary className="cursor-pointer text-xs text-zinc-500">Bewerken</summary>
           <LineEditForm
             line={line}
             categories={categories}
@@ -441,28 +441,29 @@ function ProjectLineRow({
             onSubmit={onEdit}
             errors={editErrors}
           />
+          <div className="mt-3 border-t border-zinc-200 pt-3">
+            <p className="mb-1 text-xs font-medium text-zinc-700">Korting</p>
+            <LineDiscountForm
+              line={line}
+              pending={pending}
+              onSubmit={onDiscount}
+              errors={discountErrors}
+            />
+          </div>
         </details>
       </td>
-      <td className="px-4 py-3">{line.quantity}</td>
-      <td className="px-4 py-3 text-zinc-600">
-        {toDateInputValue(line.rentalStart)} → {toDateInputValue(line.rentalEnd)}
+      <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">{line.quantity}</td>
+      <td className="whitespace-nowrap px-3 py-2 text-zinc-600">
+        {formatRentalPeriod(line.rentalStart, line.rentalEnd)}
       </td>
-      <td className="px-4 py-3 tabular-nums">{days}</td>
-      <td className="px-4 py-3 tabular-nums">{formatStaffelFactor(factor)}</td>
-      <td className="px-4 py-3">
-        <LineDiscountForm
-          line={line}
-          pending={pending}
-          onSubmit={onDiscount}
-          errors={discountErrors}
-        />
-        {discount > 0 && discountLabel && (
-          <div className="mt-1 text-xs text-red-700">
-            −{formatEur(discount)} ({discountLabel})
-          </div>
-        )}
+      <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">{days}</td>
+      <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
+        {formatStaffelFactor(factor)}
       </td>
-      <td className="px-4 py-3 text-right tabular-nums">
+      <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums text-zinc-500">
+        {discount > 0 && discountLabel ? `−${formatEur(discount)}` : '—'}
+      </td>
+      <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
         {discount > 0 ? (
           <>
             <div className="text-xs text-zinc-400 line-through">{formatEur(gross)}</div>
@@ -472,7 +473,7 @@ function ProjectLineRow({
           <div className="font-medium">{formatEur(lineTotal)}</div>
         )}
       </td>
-      <td className="px-4 py-3">
+      <td className="whitespace-nowrap px-3 py-2">
         <button
           type="button"
           disabled={pending}
@@ -638,17 +639,17 @@ export default function ProjectLinesSection({
                   <span className="font-normal text-zinc-500">({group.items.length})</span>
                 </h3>
               </div>
-              <table className="w-full min-w-[920px] text-left text-sm">
+              <table className="w-full text-left text-sm">
                 <thead className="border-b border-zinc-200 text-zinc-600">
                   <tr>
-                    <th className="px-4 py-2">Materiaal</th>
-                    <th className="px-4 py-2">Aantal</th>
-                    <th className="px-4 py-2">Periode</th>
-                    <th className="px-4 py-2">Dagen</th>
-                    <th className="px-4 py-2">Staffel</th>
-                    <th className="px-4 py-2">Korting</th>
-                    <th className="px-4 py-2 text-right">Totaal</th>
-                    <th className="px-4 py-2" />
+                    <th className="px-3 py-2 font-medium">Materiaal</th>
+                    <th className="px-3 py-2 text-right font-medium">Aantal</th>
+                    <th className="px-3 py-2 font-medium">Periode</th>
+                    <th className="px-3 py-2 text-right font-medium">Dagen</th>
+                    <th className="px-3 py-2 text-right font-medium">Staffel</th>
+                    <th className="px-3 py-2 text-right font-medium">Korting</th>
+                    <th className="px-3 py-2 text-right font-medium">Totaal</th>
+                    <th className="px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
