@@ -38,6 +38,11 @@ export function formatPercent(value: number): string {
   return `${new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 2 }).format(value)}%`;
 }
 
+/** Staffel as a multiplier of the daily rate. 200% is 2, 175% is 1,75. */
+export function formatStaffelFactor(factor: number): string {
+  return new Intl.NumberFormat('nl-NL', { maximumFractionDigits: 2 }).format(factor);
+}
+
 export function formatStaffelRule(staffel: RentalStaffel = DEFAULT_RENTAL_STAFFEL): string {
   const steps = normalizeStaffel(staffel);
   if (steps.length === 1) {
@@ -48,15 +53,6 @@ export function formatStaffelRule(staffel: RentalStaffel = DEFAULT_RENTAL_STAFFE
     .map((percent, index) => `dag ${index + 1} ${formatPercent(percent)}`);
   const last = steps[steps.length - 1];
   return `${specific.join(', ')}, elke volgende dag ${formatPercent(last)} van de dagprijs`;
-}
-
-/** Shown under the day count when the staffel is not a full day price per day. */
-export function staffelDayNote(
-  days: number,
-  staffel: RentalStaffel = DEFAULT_RENTAL_STAFFEL
-): string | null {
-  if (chargesFullDailyRate(days, staffel)) return null;
-  return `${formatPercent(staffelFactor(days, staffel) * 100)} van dagprijs`;
 }
 
 export type LineDiscount = {

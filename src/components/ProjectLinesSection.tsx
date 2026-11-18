@@ -20,7 +20,7 @@ import {
   isCustomProjectLine,
   isExternalRentalLine,
   rentalDays,
-  staffelDayNote,
+  formatStaffelFactor,
   chargesFullDailyRate,
   DEFAULT_RENTAL_STAFFEL,
   type ProjectLineRecord,
@@ -416,8 +416,7 @@ function ProjectLineRow({
   onDelete: () => void;
   staffel: RentalStaffel;
 }) {
-  const { days, gross, discount, total: lineTotal } = lineBreakdown(line, staffel);
-  const dayNote = staffelDayNote(days, staffel);
+  const { days, factor, gross, discount, total: lineTotal } = lineBreakdown(line, staffel);
   const discountLabel = formatDiscountLabel(line);
   const rate = projectLineDailyRate(line);
 
@@ -448,10 +447,8 @@ function ProjectLineRow({
       <td className="px-4 py-3 text-zinc-600">
         {toDateInputValue(line.rentalStart)} → {toDateInputValue(line.rentalEnd)}
       </td>
-      <td className="px-4 py-3">
-        {days}
-        {dayNote && <div className="text-xs text-zinc-500">{dayNote}</div>}
-      </td>
+      <td className="px-4 py-3 tabular-nums">{days}</td>
+      <td className="px-4 py-3 tabular-nums">{formatStaffelFactor(factor)}</td>
       <td className="px-4 py-3">
         <LineDiscountForm
           line={line}
@@ -648,6 +645,7 @@ export default function ProjectLinesSection({
                     <th className="px-4 py-2">Aantal</th>
                     <th className="px-4 py-2">Periode</th>
                     <th className="px-4 py-2">Dagen</th>
+                    <th className="px-4 py-2">Staffel</th>
                     <th className="px-4 py-2">Korting</th>
                     <th className="px-4 py-2 text-right">Totaal</th>
                     <th className="px-4 py-2" />

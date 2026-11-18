@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   computeDiscountAmount,
+  formatStaffelFactor,
   formatStaffelRule,
   lineBreakdown,
   lineNetTotal,
@@ -49,6 +50,8 @@ describe('pricing', () => {
     expect(staffelFactor(7)).toBe(2.75);
     expect(staffelFactor(4, [100, 40])).toBe(2.2);
     expect(lineTotal(2, 100, start, end)).toBe(350);
+    expect(formatStaffelFactor(staffelFactor(3))).toBe('1,75');
+    expect(formatStaffelFactor(staffelFactor(3, [100, 50, 50, 25]))).toBe('2');
     expect(formatStaffelRule()).toBe(
       'dag 1 100%, dag 2 50%, elke volgende dag 25% van de dagprijs'
     );
