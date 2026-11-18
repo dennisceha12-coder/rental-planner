@@ -200,6 +200,22 @@ export const companySettingsSchema = z.object({
   quoteValidityDays: z.coerce.number().int().min(1).max(365),
   defaultVatRate: z.coerce.number().min(0).max(100),
   paymentTerms: z.string().optional(),
+  rentalStaffelPercents: z
+    .array(
+      z
+        .string()
+        .trim()
+        .min(1, 'Vul elk percentage in')
+        .transform((value) => Number(value))
+        .pipe(
+          z
+            .number()
+            .min(0, 'Percentage mag niet negatief zijn')
+            .max(100, 'Percentage mag maximaal 100 zijn')
+        )
+    )
+    .min(1, 'Minimaal één staffeltrede')
+    .max(31, 'Maximaal 31 staffeltreden'),
 });
 
 export const staffSchema = z.object({

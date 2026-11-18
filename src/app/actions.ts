@@ -644,6 +644,7 @@ export async function updateCompanySettings(formData: FormData) {
     quoteValidityDays: formData.get('quoteValidityDays'),
     defaultVatRate: formData.get('defaultVatRate'),
     paymentTerms: formData.get('paymentTerms') || undefined,
+    rentalStaffelPercents: formData.getAll('staffelPercent').map(String),
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 

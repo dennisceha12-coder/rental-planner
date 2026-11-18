@@ -44,9 +44,11 @@ model CompanySettings {
   kvkNumber         String?
   vatNumber         String?
   iban              String?
-  quoteValidityDays Int    @default(30)
-  defaultVatRate    Float  @default(21)
-  paymentTerms      String?
+  quoteValidityDays     Int      @default(30)
+  defaultVatRate        Float    @default(21)
+  paymentTerms          String?
+  /// Percent of the daily rate for each successive rental day. The last value repeats.
+  rentalStaffelPercents Float[]  @default([100, 50, 25])
 }
 
 model Client {

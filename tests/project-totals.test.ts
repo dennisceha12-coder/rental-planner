@@ -59,11 +59,11 @@ describe('project-totals', () => {
       transportRatePerKm: null,
       transportFixedAmount: 100,
     });
-    expect(totals.material).toBe(270);
+    expect(totals.material).toBe(157.5);
     expect(totals.transport).toBe(100);
-    expect(totals.subtotalBeforeTotalDiscount).toBe(370);
+    expect(totals.subtotalBeforeTotalDiscount).toBe(257.5);
     expect(totals.totalDiscountAmount).toBe(50);
-    expect(totals.grandTotal).toBe(320);
+    expect(totals.grandTotal).toBe(207.5);
   });
 
   it('tracks external rental material in totals', () => {
@@ -119,9 +119,9 @@ describe('project-totals', () => {
       transportFixedAmount: null,
     });
     expect(totals.externalRentalLineCount).toBe(1);
-    expect(totals.externalRentalMaterial).toBe(300);
-    expect(totals.ownMaterial).toBe(300);
-    expect(totals.material).toBe(600);
+    expect(totals.externalRentalMaterial).toBe(175);
+    expect(totals.ownMaterial).toBe(175);
+    expect(totals.material).toBe(350);
   });
 
   it('caps total discount at subtotal', () => {

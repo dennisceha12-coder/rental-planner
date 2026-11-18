@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { equipmentSchema } from '@/lib/validators';
+import { companySettingsSchema, equipmentSchema } from '@/lib/validators';
 
 describe('equipmentSchema', () => {
   it('accepts unchecked external rental checkbox (FormData null)', () => {
@@ -55,6 +55,40 @@ describe('equipmentSchema', () => {
       isExternalRental: null,
     });
 
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('companySettingsSchema', () => {
+  const base = {
+    companyName: 'Studio',
+    address: 'Straat 1',
+    email: '',
+    phone: '',
+    kvkNumber: '',
+    vatNumber: '',
+    iban: '',
+    quoteValidityDays: '30',
+    defaultVatRate: '21',
+    paymentTerms: '',
+  };
+
+  it('accepts a rental staffel', () => {
+    const result = companySettingsSchema.safeParse({
+      ...base,
+      rentalStaffelPercents: ['100', '50', '25'],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.rentalStaffelPercents).toEqual([100, 50, 25]);
+    }
+  });
+
+  it('rejects a staffel percentage above 100', () => {
+    const result = companySettingsSchema.safeParse({
+      ...base,
+      rentalStaffelPercents: ['100', '150'],
+    });
     expect(result.success).toBe(false);
   });
 });

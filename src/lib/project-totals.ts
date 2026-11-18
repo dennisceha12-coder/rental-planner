@@ -7,7 +7,9 @@ import {
   projectExternalRentalGrossTotal,
   projectOwnMaterialTotal,
   externalRentalLines,
+  DEFAULT_RENTAL_STAFFEL,
   type LineWithEquipment,
+  type RentalStaffel,
 } from '@/lib/pricing';
 import {
   crewCostByPhase,
@@ -96,15 +98,16 @@ export function formatTransportLabel(transport: ProjectTransport): string {
 
 export function computeProjectTotals(
   lines: LineWithEquipment[],
-  costs: ProjectCostFields
+  costs: ProjectCostFields,
+  staffel: RentalStaffel = DEFAULT_RENTAL_STAFFEL
 ): ProjectTotals {
-  const materialGross = projectMaterialGrossTotal(lines);
-  const lineDiscountTotal = projectLineDiscountTotal(lines);
-  const material = projectMaterialTotal(lines);
-  const externalRentalMaterial = projectExternalRentalMaterialTotal(lines);
-  const externalRentalMaterialGross = projectExternalRentalGrossTotal(lines);
+  const materialGross = projectMaterialGrossTotal(lines, staffel);
+  const lineDiscountTotal = projectLineDiscountTotal(lines, staffel);
+  const material = projectMaterialTotal(lines, staffel);
+  const externalRentalMaterial = projectExternalRentalMaterialTotal(lines, staffel);
+  const externalRentalMaterialGross = projectExternalRentalGrossTotal(lines, staffel);
   const externalRentalLineCount = externalRentalLines(lines).length;
-  const ownMaterial = projectOwnMaterialTotal(lines);
+  const ownMaterial = projectOwnMaterialTotal(lines, staffel);
   const laborByPhase = crewCostByPhase(costs.crewShifts, costs.hourlyRate);
   const labor = crewTotalCost(costs.crewShifts, costs.hourlyRate);
   const transport = transportTotal(costs);

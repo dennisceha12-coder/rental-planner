@@ -6,10 +6,19 @@ import {
   projectLineName,
   projectLineDailyRate,
   formatDiscountLabel,
+  staffelDayNote,
+  DEFAULT_RENTAL_STAFFEL,
   type ProjectLineRecord,
+  type RentalStaffel,
 } from '@/lib/pricing';
 
-export default function MaterialQuoteByCategory({ lines }: { lines: ProjectLineRecord[] }) {
+export default function MaterialQuoteByCategory({
+  lines,
+  staffel = DEFAULT_RENTAL_STAFFEL,
+}: {
+  lines: ProjectLineRecord[];
+  staffel?: RentalStaffel;
+}) {
   const groups = groupProjectLinesByCategory(lines);
   if (groups.length === 0) return null;
 
@@ -31,7 +40,8 @@ export default function MaterialQuoteByCategory({ lines }: { lines: ProjectLineR
             </thead>
             <tbody>
               {group.items.map((line) => {
-                const { days, gross, discount, total: lineTotal } = lineBreakdown(line);
+                const { days, gross, discount, total: lineTotal } = lineBreakdown(line, staffel);
+                const dayNote = staffelDayNote(days, staffel);
                 const discountLabel = formatDiscountLabel(line);
                 return (
                   <tr key={line.id} className="border-b border-zinc-200">
@@ -44,7 +54,10 @@ export default function MaterialQuoteByCategory({ lines }: { lines: ProjectLineR
                       )}
                     </td>
                     <td className="py-2 text-right">{line.quantity}</td>
-                    <td className="py-2 text-right">{days}</td>
+                    <td className="py-2 text-right">
+                      {days}
+                      {dayNote && <div className="text-xs text-zinc-500">{dayNote}</div>}
+                    </td>
                     <td className="py-2 text-right">
                       {formatDailyRate(projectLineDailyRate(line))}
                     </td>

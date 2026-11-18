@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useTransition, useState } from 'react';
 import { updateProjectFinancial } from '@/app/actions';
-import { formatEur } from '@/lib/pricing';
+import { formatEur, DEFAULT_RENTAL_STAFFEL, type RentalStaffel } from '@/lib/pricing';
 import { computeVatTotals } from '@/lib/vat';
 import {
   computeProjectTotals,
@@ -20,15 +20,17 @@ export default function ProjectFinancialOverview({
   lines,
   costs,
   defaultVatRate,
+  staffel = DEFAULT_RENTAL_STAFFEL,
 }: {
   projectId: string;
   lines: LineWithEquipment[];
   costs: ProjectCostFields;
   defaultVatRate: number;
+  staffel?: RentalStaffel;
 }) {
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<FieldErrors | undefined>();
-  const t = computeProjectTotals(lines, costs);
+  const t = computeProjectTotals(lines, costs, staffel);
   const vat = computeVatTotals(t.grandTotal, defaultVatRate);
   const crewPhases = crewPhaseSummaries(costs.crewShifts, costs.hourlyRate);
   const transportLabel = formatTransportLabel(costs);

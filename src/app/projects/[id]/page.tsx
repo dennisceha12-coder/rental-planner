@@ -85,6 +85,7 @@ export default async function ProjectPage({
         <ProjectCostSummary
           lines={project.lines}
           costs={projectToCostFields(project)}
+          staffel={company.rentalStaffelPercents}
         />
       )}
 
@@ -141,6 +142,7 @@ export default async function ProjectPage({
           categories={categories}
           defaultStart={defaultStart}
           defaultEnd={defaultEnd}
+          staffel={company.rentalStaffelPercents}
         />
       )}
 
@@ -150,6 +152,7 @@ export default async function ProjectPage({
           lines={project.lines}
           costs={projectToCostFields(project)}
           defaultVatRate={company.defaultVatRate}
+          staffel={company.rentalStaffelPercents}
         />
       )}
 

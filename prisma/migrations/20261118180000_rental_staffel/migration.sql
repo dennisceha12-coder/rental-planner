@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "CompanySettings" ADD COLUMN "rentalStaffelPercents" DOUBLE PRECISION[] NOT NULL DEFAULT ARRAY[100, 50, 25]::DOUBLE PRECISION[];

@@ -1,20 +1,21 @@
-import { formatEur } from '@/lib/pricing';
+import { formatEur, DEFAULT_RENTAL_STAFFEL, type LineWithEquipment, type RentalStaffel } from '@/lib/pricing';
 import {
   computeProjectTotals,
   formatTransportLabel,
   type ProjectCostFields,
 } from '@/lib/project-totals';
 import { crewPhaseSummaries } from '@/lib/crew';
-import type { LineWithEquipment } from '@/lib/pricing';
 
 export default function ProjectCostSummary({
   lines,
   costs,
+  staffel = DEFAULT_RENTAL_STAFFEL,
 }: {
   lines: LineWithEquipment[];
   costs: ProjectCostFields;
+  staffel?: RentalStaffel;
 }) {
-  const t = computeProjectTotals(lines, costs);
+  const t = computeProjectTotals(lines, costs, staffel);
   const crewPhases = crewPhaseSummaries(costs.crewShifts, costs.hourlyRate);
   const transportLabel = formatTransportLabel(costs);
   const hasExtras = t.labor > 0 || t.transport > 0;

@@ -5,6 +5,7 @@ import ProjectSearchForm from '@/components/ProjectSearchForm';
 import { STATUS_LABELS } from '@/lib/validators';
 import { computeProjectTotals, projectToCostFields } from '@/lib/project-totals';
 import { formatEur } from '@/lib/pricing';
+import { getCompanySettings } from '@/lib/company-settings';
 import type { ProjectStatus } from '@/generated/prisma/client';
 
 export default async function HomePage({
@@ -13,7 +14,7 @@ export default async function HomePage({
   searchParams: Promise<{ status?: string; q?: string }>;
 }) {
   const { status, q } = await searchParams;
-  const projects = await listProjects(status, q);
+  const [projects, company] = await Promise.all([listProjects(status, q), getCompanySettings()]);
   const statuses = Object.keys(STATUS_LABELS) as ProjectStatus[];
 
   return (
@@ -58,7 +59,11 @@ export default async function HomePage({
       ) : (
         <ul className="divide-y divide-zinc-200 overflow-hidden rounded-lg border border-zinc-200 bg-white">
           {projects.map((p) => {
-            const totals = computeProjectTotals(p.lines, projectToCostFields(p));
+            const totals = computeProjectTotals(
+              p.lines,
+              projectToCostFields(p),
+              company.rentalStaffelPercents
+            );
             const hasTotal = totals.grandTotal > 0;
             return (
               <li key={p.id}>

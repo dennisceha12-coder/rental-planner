@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import type { CompanySettings } from '@/generated/prisma/client';
 import { computeVatTotals } from '@/lib/vat';
+import { DEFAULT_RENTAL_STAFFEL, normalizeStaffel } from '@/lib/pricing';
 
 export { computeVatTotals };
 
@@ -15,13 +16,19 @@ const DEFAULTS: Omit<CompanySettings, 'id'> = {
   quoteValidityDays: 30,
   defaultVatRate: 21,
   paymentTerms: null,
+  rentalStaffelPercents: [...DEFAULT_RENTAL_STAFFEL],
 };
 
 export async function getCompanySettings(): Promise<CompanySettings> {
   const existing = await prisma.companySettings.findUnique({
     where: { id: 'default' },
   });
-  if (existing) return existing;
+  if (existing) {
+    return {
+      ...existing,
+      rentalStaffelPercents: normalizeStaffel(existing.rentalStaffelPercents),
+    };
+  }
   return prisma.companySettings.create({
     data: { id: 'default', ...DEFAULTS },
   });

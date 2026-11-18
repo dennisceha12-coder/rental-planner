@@ -19,7 +19,12 @@ import {
   projectLineDailyRate,
   isCustomProjectLine,
   isExternalRentalLine,
+  rentalDays,
+  staffelDayNote,
+  chargesFullDailyRate,
+  DEFAULT_RENTAL_STAFFEL,
   type ProjectLineRecord,
+  type RentalStaffel,
 } from '@/lib/pricing';
 import { toDateInputValue } from '@/lib/dates';
 import { groupEquipmentByCategory, groupProjectLinesByCategory } from '@/lib/equipment-categories';
@@ -387,6 +392,7 @@ function ProjectLineRow({
   onEdit,
   onDiscount,
   onDelete,
+  staffel,
 }: {
   line: Line;
   categories: Category[];
@@ -396,8 +402,10 @@ function ProjectLineRow({
   onEdit: (fd: FormData) => void;
   onDiscount: (fd: FormData) => void;
   onDelete: () => void;
+  staffel: RentalStaffel;
 }) {
-  const { days, gross, discount, total: lineTotal } = lineBreakdown(line);
+  const { days, gross, discount, total: lineTotal } = lineBreakdown(line, staffel);
+  const dayNote = staffelDayNote(days, staffel);
   const discountLabel = formatDiscountLabel(line);
   const rate = projectLineDailyRate(line);
 
@@ -428,7 +436,10 @@ function ProjectLineRow({
       <td className="px-4 py-3 text-zinc-600">
         {toDateInputValue(line.rentalStart)} → {toDateInputValue(line.rentalEnd)}
       </td>
-      <td className="px-4 py-3">{days}</td>
+      <td className="px-4 py-3">
+        {days}
+        {dayNote && <div className="text-xs text-zinc-500">{dayNote}</div>}
+      </td>
       <td className="px-4 py-3">
         <LineDiscountForm
           line={line}
@@ -476,6 +487,7 @@ export default function ProjectLinesSection({
   categories,
   defaultStart,
   defaultEnd,
+  staffel = DEFAULT_RENTAL_STAFFEL,
 }: {
   projectId: string;
   lines: Line[];
@@ -483,12 +495,16 @@ export default function ProjectLinesSection({
   categories: Category[];
   defaultStart?: string;
   defaultEnd?: string;
+  staffel?: RentalStaffel;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [catalogQuery, setCatalogQuery] = useState('');
   const [formErrors, setFormErrors] = useState<Record<string, FieldErrors | undefined>>({});
-  const total = projectMaterialTotal(lines);
+  const total = projectMaterialTotal(lines, staffel);
+  const usesStaffel = lines.some(
+    (line) => !chargesFullDailyRate(rentalDays(line.rentalStart, line.rentalEnd), staffel)
+  );
 
   const lineGroups = useMemo(() => groupProjectLinesByCategory(lines), [lines]);
 
@@ -636,6 +652,7 @@ export default function ProjectLinesSection({
                       discountErrors={formErrors[`discount-${line.id}`]}
                       onEdit={(fd) => submitLineEdit(line.id, fd)}
                       onDiscount={(fd) => submitLineDiscount(line.id, fd)}
+                      staffel={staffel}
                       onDelete={() => {
                         startTransition(() => {
                           void (async () => {
@@ -650,9 +667,16 @@ export default function ProjectLinesSection({
               </table>
             </div>
           ))}
-          <div className="flex justify-end rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
-            <span className="text-sm font-semibold text-zinc-700">Totaal materiaal</span>
-            <span className="ml-4 text-lg font-semibold tabular-nums">{formatEur(total)}</span>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+            <div className="flex justify-end">
+              <span className="text-sm font-semibold text-zinc-700">Totaal materiaal</span>
+              <span className="ml-4 text-lg font-semibold tabular-nums">{formatEur(total)}</span>
+            </div>
+            {usesStaffel && (
+              <p className="mt-1 text-right text-xs text-zinc-500">
+                Meerdaagse huur volgt de staffel uit bedrijfsgegevens.
+              </p>
+            )}
           </div>
         </div>
       )}

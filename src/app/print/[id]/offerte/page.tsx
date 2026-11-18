@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getProjectById } from '@/lib/project-queries';
 import { formatDateNl, formatTimeRange } from '@/lib/dates';
-import { formatEur } from '@/lib/pricing';
+import { chargesFullDailyRate, formatEur, formatStaffelRule, rentalDays } from '@/lib/pricing';
 import MaterialQuoteByCategory from '@/components/print/MaterialQuoteByCategory';
 import {
   computeProjectTotals,
@@ -28,7 +28,11 @@ export default async function OffertePrintPage({
   if (!project) notFound();
 
   const costs = projectToCostFields(project);
-  const totals = computeProjectTotals(project.lines, costs);
+  const staffel = company.rentalStaffelPercents;
+  const totals = computeProjectTotals(project.lines, costs, staffel);
+  const staffelApplies = project.lines.some(
+    (line) => !chargesFullDailyRate(rentalDays(line.rentalStart, line.rentalEnd), staffel)
+  );
   const extraLines = quoteExtraLines(costs);
   const today = new Date();
   const quoteDate = today.toLocaleDateString('nl-NL');
@@ -110,7 +114,12 @@ export default async function OffertePrintPage({
 
       {project.lines.length > 0 && (
         <div className="mb-6">
-          <MaterialQuoteByCategory lines={project.lines} />
+          <MaterialQuoteByCategory lines={project.lines} staffel={staffel} />
+          {staffelApplies && (
+            <p className="text-xs text-zinc-500">
+              Meerdaagse huur volgt een staffel: {formatStaffelRule(staffel)}.
+            </p>
+          )}
         </div>
       )}
 
