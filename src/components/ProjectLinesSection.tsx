@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { Fragment, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   addProjectLine,
@@ -421,14 +421,12 @@ function ProjectLineRow({
   const rate = projectLineDailyRate(line);
 
   return (
-    <tr className="align-top">
+    <tr className="border-t border-zinc-100 align-top">
       <td className="px-3 py-2">
         <div className="font-medium">{projectLineName(line)}</div>
-        {isCustomProjectLine(line) && (
-          <div className="text-xs text-zinc-500">
-            {rate === 0 ? 'Gratis' : `${formatEur(rate)}/dag`}
-          </div>
-        )}
+        <div className="text-xs text-zinc-500">
+          {rate === 0 ? 'Gratis' : `${formatEur(rate)}/dag`}
+        </div>
         {isExternalRentalLine(line) && (
           <div className="text-xs text-amber-700">Extern inhuur</div>
         )}
@@ -628,31 +626,39 @@ export default function ProjectLinesSection({
         <p className="text-sm text-zinc-500">Nog geen materiaal op dit project.</p>
       ) : (
         <div className="space-y-6">
-          {lineGroups.map((group) => (
-            <div
-              key={group.key}
-              className="overflow-x-auto rounded-lg border border-zinc-200 bg-white"
-            >
-              <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-2">
-                <h3 className="text-sm font-semibold text-zinc-800">
-                  {group.name}{' '}
-                  <span className="font-normal text-zinc-500">({group.items.length})</span>
-                </h3>
-              </div>
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-zinc-200 text-zinc-600">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Materiaal</th>
-                    <th className="px-3 py-2 text-right font-medium">Aantal</th>
-                    <th className="px-3 py-2 font-medium">Periode</th>
-                    <th className="px-3 py-2 text-right font-medium">Dagen</th>
-                    <th className="px-3 py-2 text-right font-medium">Staffel</th>
-                    <th className="px-3 py-2 text-right font-medium">Korting</th>
-                    <th className="px-3 py-2 text-right font-medium">Totaal</th>
-                    <th className="px-3 py-2" />
+        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
+          <table className="w-full table-fixed text-left text-sm">
+            <colgroup>
+              <col />
+              <col className="w-20" />
+              <col className="w-40" />
+              <col className="w-16" />
+              <col className="w-20" />
+              <col className="w-28" />
+              <col className="w-32" />
+              <col className="w-24" />
+            </colgroup>
+            <thead className="border-b border-zinc-200 text-zinc-600">
+              <tr>
+                <th className="px-3 py-2 font-medium">Materiaal</th>
+                <th className="px-3 py-2 text-right font-medium">Aantal</th>
+                <th className="px-3 py-2 font-medium">Periode</th>
+                <th className="px-3 py-2 text-right font-medium">Dagen</th>
+                <th className="px-3 py-2 text-right font-medium">Staffel</th>
+                <th className="px-3 py-2 text-right font-medium">Korting</th>
+                <th className="px-3 py-2 text-right font-medium">Totaal</th>
+                <th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {lineGroups.map((group) => (
+                <Fragment key={group.key}>
+                  <tr className="border-t border-zinc-200 bg-zinc-50">
+                    <td colSpan={8} className="px-3 py-2 text-sm font-semibold text-zinc-800">
+                      {group.name}{' '}
+                      <span className="font-normal text-zinc-500">({group.items.length})</span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100">
                   {group.items.map((line) => (
                     <ProjectLineRow
                       key={line.id}
@@ -674,10 +680,11 @@ export default function ProjectLinesSection({
                       }}
                     />
                   ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
             <div className="flex justify-end">
               <span className="text-sm font-semibold text-zinc-700">Totaal materiaal</span>
