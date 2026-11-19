@@ -73,6 +73,9 @@ export type QuotePdfData = {
     totalLabel: string;
   }[];
   totals: { label: string; value: string; kind: 'normal' | 'discount' | 'subtotal' | 'grand' }[];
+  reverseCharge: boolean;
+  reverseChargeNoteNl: string | null;
+  reverseChargeNoteEn: string | null;
 };
 
 const styles = StyleSheet.create({
@@ -352,10 +355,20 @@ export default function QuoteDocument({ data }: { data: QuotePdfData }) {
           </View>
         ) : null}
 
-        <Text style={styles.footer}>
-          {company.paymentTerms ? `Betalingsvoorwaarden: ${company.paymentTerms}  ·  ` : ''}
-          Deze offerte is {data.validityDays} dagen geldig (tot {data.validUntil}). Prijzen in EUR.
-        </Text>
+        <View style={styles.footer}>
+          {company.paymentTerms ? (
+            <Text>Betalingsvoorwaarden: {company.paymentTerms}</Text>
+          ) : null}
+          {data.reverseChargeNoteNl ? (
+            <Text style={{ marginTop: 4, fontWeight: 700 }}>{data.reverseChargeNoteNl}</Text>
+          ) : null}
+          {data.reverseChargeNoteEn ? (
+            <Text style={{ marginTop: 2 }}>{data.reverseChargeNoteEn}</Text>
+          ) : null}
+          <Text style={{ marginTop: 4 }}>
+            Deze offerte is {data.validityDays} dagen geldig (tot {data.validUntil}). Prijzen in EUR.
+          </Text>
+        </View>
       </Page>
     </Document>
   );

@@ -19,6 +19,7 @@ import {
   projectSchema,
   projectLineSchema,
   projectFinancialSchema,
+  projectVatSchema,
   projectLineDiscountSchema,
   crewShiftSchema,
   companySettingsSchema,
@@ -53,6 +54,8 @@ export async function createClient(formData: FormData) {
     phone: formData.get('phone') || undefined,
     address: formData.get('address') || undefined,
     vatNumber: formData.get('vatNumber') || undefined,
+    countryCode: formData.get('countryCode') || undefined,
+    vatReverseChargeDefault: formData.get('vatReverseChargeDefault'),
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -69,6 +72,8 @@ export async function updateClient(id: string, formData: FormData) {
     phone: formData.get('phone') || undefined,
     address: formData.get('address') || undefined,
     vatNumber: formData.get('vatNumber') || undefined,
+    countryCode: formData.get('countryCode') || undefined,
+    vatReverseChargeDefault: formData.get('vatReverseChargeDefault'),
   });
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
@@ -215,6 +220,11 @@ export async function createProject(formData: FormData) {
     return { error: { clientId: ['Kies een klant of voer een nieuwe klantnaam in'] } };
   }
 
+  const resolvedClient = await prisma.client.findUnique({
+    where: { id: resolvedClientId },
+    select: { vatReverseChargeDefault: true },
+  });
+
   const quoteNumber =
     String(formData.get('quoteNumber') ?? '').trim() ||
     (await generateQuoteNumber());
@@ -252,6 +262,7 @@ export async function createProject(formData: FormData) {
       loadIn: parseDateInput(loadIn),
       showDate: parseDateInput(showDate),
       loadOut: parseDateInput(loadOut),
+      vatReverseCharge: resolvedClient?.vatReverseChargeDefault ?? false,
     },
   });
   revalidateAll(project.id);
@@ -341,6 +352,7 @@ export async function duplicateProject(id: string) {
       transportRatePerKm: source.transportRatePerKm,
       transportFixedAmount: source.transportFixedAmount,
       totalDiscountAmount: source.totalDiscountAmount,
+      vatReverseCharge: source.vatReverseCharge,
       lines: {
         create: source.lines.map((line) => ({
           equipmentId: line.equipmentId,
@@ -399,6 +411,21 @@ export async function updateProjectFinancial(formData: FormData) {
   await prisma.project.update({
     where: { id: parsed.data.projectId },
     data: { totalDiscountAmount: amount },
+  });
+  revalidateAll(parsed.data.projectId);
+  return { ok: true };
+}
+
+export async function updateProjectVat(formData: FormData) {
+  const parsed = projectVatSchema.safeParse({
+    projectId: formData.get('projectId'),
+    vatReverseCharge: formData.get('vatReverseCharge'),
+  });
+  if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
+
+  await prisma.project.update({
+    where: { id: parsed.data.projectId },
+    data: { vatReverseCharge: parsed.data.vatReverseCharge },
   });
   revalidateAll(parsed.data.projectId);
   return { ok: true };

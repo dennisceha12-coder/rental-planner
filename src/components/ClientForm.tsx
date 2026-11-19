@@ -3,7 +3,11 @@
 import { useState, useTransition } from 'react';
 import { createClient, updateClient } from '@/app/actions';
 import FormErrors from '@/components/FormErrors';
-import { CLIENT_TYPE_LABELS } from '@/lib/clients';
+import {
+  CLIENT_COUNTRY_OPTIONS,
+  CLIENT_TYPE_LABELS,
+  isEuCountry,
+} from '@/lib/clients';
 import type { FieldErrors } from '@/lib/form-errors';
 import type { ClientType } from '@/generated/prisma/client';
 
@@ -15,13 +19,21 @@ type Client = {
   phone: string | null;
   address: string | null;
   vatNumber: string | null;
+  countryCode: string;
+  vatReverseChargeDefault: boolean;
 };
 
 export default function ClientForm({ client }: { client?: Client }) {
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<FieldErrors | undefined>();
   const [type, setType] = useState<ClientType>(client?.type ?? 'BEDRIJF');
+  const [countryCode, setCountryCode] = useState(client?.countryCode ?? 'NL');
+  const [reverseCharge, setReverseCharge] = useState(
+    client?.vatReverseChargeDefault ?? false
+  );
   const isBusiness = type === 'BEDRIJF';
+  const inEu = isEuCountry(countryCode);
+  const reverseChargeEligible = isBusiness && inEu && countryCode !== 'NL';
 
   return (
     <form
@@ -93,13 +105,59 @@ export default function ClientForm({ client }: { client?: Client }) {
         />
       </label>
       <label className="grid gap-1 text-sm">
+        Land
+        <select
+          name="countryCode"
+          value={countryCode}
+          onChange={(event) => setCountryCode(event.target.value)}
+          className="rounded border border-zinc-300 bg-white px-3 py-2"
+        >
+          {CLIENT_COUNTRY_OPTIONS.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1 text-sm">
         BTW-nummer
         <input
           name="vatNumber"
+          placeholder={countryCode === 'BE' ? 'BE0123456789' : undefined}
           defaultValue={client?.vatNumber ?? ''}
           className="rounded border border-zinc-300 px-3 py-2"
         />
       </label>
+      {isBusiness && (
+        <label
+          className={`flex items-start gap-2 text-sm ${
+            reverseChargeEligible ? '' : 'text-zinc-500'
+          }`}
+        >
+          <input
+            type="checkbox"
+            name="vatReverseChargeDefault"
+            checked={reverseCharge}
+            onChange={(event) => setReverseCharge(event.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            BTW verlegd bij nieuwe projecten (intracommunautair B2B).
+            {!reverseChargeEligible && (
+              <span className="mt-0.5 block text-xs">
+                Alleen bedoeld voor zakelijke klanten in een ander EU-land. De keuze blijft
+                bewaard maar wordt genegeerd zolang land en type niet kloppen.
+              </span>
+            )}
+            {reverseChargeEligible && (
+              <span className="mt-0.5 block text-xs text-zinc-500">
+                Nieuwe projecten voor deze klant krijgen 0% BTW met vermelding &quot;BTW
+                verlegd&quot;. Vul het BTW-nummer in; leverancier moet ook een BTW-id hebben.
+              </span>
+            )}
+          </span>
+        </label>
+      )}
       <button
         type="submit"
         disabled={pending}

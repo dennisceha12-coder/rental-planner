@@ -14,6 +14,7 @@ import {
   quoteValidUntil,
   computeVatTotals,
 } from '@/lib/company-settings';
+import { REVERSE_CHARGE_NOTE_EN, REVERSE_CHARGE_NOTE_NL } from '@/lib/vat';
 import PrintHeader from '@/components/print/PrintHeader';
 import PrintToolbar from '@/components/PrintToolbar';
 import { CLIENT_TYPE_LABELS } from '@/lib/clients';
@@ -37,8 +38,22 @@ export default async function OffertePrintPage({
   const today = new Date();
   const quoteDate = today.toLocaleDateString('nl-NL');
   const validUntil = quoteValidUntil(today, company.quoteValidityDays).toLocaleDateString('nl-NL');
-  const vat = computeVatTotals(totals.grandTotal, company.defaultVatRate);
+  const vatMode = project.vatReverseCharge ? 'REVERSE_CHARGE' : 'STANDARD';
+  const vat = computeVatTotals(totals.grandTotal, company.defaultVatRate, vatMode);
   const supplierConfigured = isCompanyConfigured(company);
+  const reverseChargeWarnings: string[] = [];
+  if (project.vatReverseCharge) {
+    if (!company.vatNumber?.trim()) {
+      reverseChargeWarnings.push(
+        'BTW verlegd staat aan maar je eigen BTW-id ontbreekt in Bedrijfsgegevens.'
+      );
+    }
+    if (!project.client.vatNumber?.trim()) {
+      reverseChargeWarnings.push(
+        'BTW verlegd staat aan maar deze klant heeft geen BTW-nummer.'
+      );
+    }
+  }
 
   return (
     <>
@@ -47,6 +62,13 @@ export default async function OffertePrintPage({
         <p className="no-print mb-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           Bedrijfsgegevens niet compleet — vul in via Instellingen → Bedrijf.
         </p>
+      )}
+      {reverseChargeWarnings.length > 0 && (
+        <ul className="no-print mb-4 space-y-1 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {reverseChargeWarnings.map((text) => (
+            <li key={text}>• {text}</li>
+          ))}
+        </ul>
       )}
       <PrintHeader
         title="Offerte"
@@ -201,11 +223,17 @@ export default async function OffertePrintPage({
             </td>
           </tr>
           <tr>
-            <td className="py-1 text-right text-zinc-600">BTW ({company.defaultVatRate}%)</td>
-            <td className="py-1 pl-4 text-right tabular-nums">{formatEur(vat.vatAmount)}</td>
+            <td className="py-1 text-right text-zinc-600">
+              {vat.reverseCharge ? 'BTW verlegd' : `BTW (${company.defaultVatRate}%)`}
+            </td>
+            <td className="py-1 pl-4 text-right tabular-nums">
+              {vat.reverseCharge ? '€ 0,00' : formatEur(vat.vatAmount)}
+            </td>
           </tr>
           <tr className="border-t-2 border-zinc-800">
-            <td className="pt-3 text-right font-semibold">Totaal incl. BTW</td>
+            <td className="pt-3 text-right font-semibold">
+              {vat.reverseCharge ? 'Totaal te betalen' : 'Totaal incl. BTW'}
+            </td>
             <td className="pt-3 pl-4 text-right text-lg font-bold tabular-nums">
               {formatEur(vat.totalInclVat)}
             </td>
@@ -222,6 +250,12 @@ export default async function OffertePrintPage({
 
       <footer className="mt-8 border-t border-zinc-200 pt-4 text-xs text-zinc-600">
         {company.paymentTerms && <p>Betalingsvoorwaarden: {company.paymentTerms}</p>}
+        {vat.reverseCharge && (
+          <>
+            <p className="mt-1 font-medium text-zinc-800">{REVERSE_CHARGE_NOTE_NL}</p>
+            <p className="mt-0.5">{REVERSE_CHARGE_NOTE_EN}</p>
+          </>
+        )}
         <p className="mt-1">
           Deze offerte is {company.quoteValidityDays} dagen geldig (tot {validUntil}). Prijzen in EUR.
         </p>

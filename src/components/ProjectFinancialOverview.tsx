@@ -2,9 +2,13 @@
 
 import Link from 'next/link';
 import { useTransition, useState } from 'react';
-import { updateProjectFinancial } from '@/app/actions';
+import { updateProjectFinancial, updateProjectVat } from '@/app/actions';
 import { formatEur, DEFAULT_RENTAL_STAFFEL, type RentalStaffel } from '@/lib/pricing';
-import { computeVatTotals } from '@/lib/vat';
+import {
+  computeVatTotals,
+  REVERSE_CHARGE_NOTE_NL,
+  type VatMode,
+} from '@/lib/vat';
 import {
   computeProjectTotals,
   formatTransportLabel,
@@ -14,6 +18,13 @@ import { crewPhaseSummaries } from '@/lib/crew';
 import FormErrors from '@/components/FormErrors';
 import type { FieldErrors } from '@/lib/form-errors';
 import type { LineWithEquipment } from '@/lib/pricing';
+import { countryLabel, isEuCountry } from '@/lib/clients';
+
+type ClientVatInfo = {
+  countryCode: string;
+  vatNumber: string | null;
+  vatReverseChargeDefault: boolean;
+};
 
 export default function ProjectFinancialOverview({
   projectId,
@@ -21,19 +32,56 @@ export default function ProjectFinancialOverview({
   costs,
   defaultVatRate,
   staffel = DEFAULT_RENTAL_STAFFEL,
+  vatReverseCharge,
+  supplierVatNumber,
+  client,
 }: {
   projectId: string;
   lines: LineWithEquipment[];
   costs: ProjectCostFields;
   defaultVatRate: number;
   staffel?: RentalStaffel;
+  vatReverseCharge: boolean;
+  supplierVatNumber: string | null;
+  client: ClientVatInfo;
 }) {
   const [pending, startTransition] = useTransition();
+  const [vatPending, startVatTransition] = useTransition();
   const [errors, setErrors] = useState<FieldErrors | undefined>();
+  const [reverseCharge, setReverseCharge] = useState(vatReverseCharge);
   const t = computeProjectTotals(lines, costs, staffel);
-  const vat = computeVatTotals(t.grandTotal, defaultVatRate);
+  const mode: VatMode = reverseCharge ? 'REVERSE_CHARGE' : 'STANDARD';
+  const vat = computeVatTotals(t.grandTotal, defaultVatRate, mode);
   const crewPhases = crewPhaseSummaries(costs.crewShifts, costs.hourlyRate);
   const transportLabel = formatTransportLabel(costs);
+
+  const supplierHasVat = (supplierVatNumber ?? '').trim().length > 0;
+  const clientHasVat = (client.vatNumber ?? '').trim().length > 0;
+  const clientInEu = isEuCountry(client.countryCode);
+  const clientInNl = client.countryCode === 'NL';
+
+  const warnings: string[] = [];
+  if (reverseCharge) {
+    if (!supplierHasVat) {
+      warnings.push(
+        'Je eigen BTW-id ontbreekt in Bedrijfsgegevens. Vul het in — het is verplicht op een offerte met BTW verlegd.'
+      );
+    }
+    if (!clientHasVat) {
+      warnings.push(
+        'De klant heeft geen BTW-nummer. Zonder BTW-id van de afnemer mag je geen BTW verleggen — vraag het op en voer het in.'
+      );
+    }
+    if (clientInNl) {
+      warnings.push(
+        'De klant staat op land Nederland. Intracommunautaire verlegging geldt alleen voor afnemers in een ander EU-land.'
+      );
+    } else if (!clientInEu) {
+      warnings.push(
+        `Land van de klant (${countryLabel(client.countryCode)}) is niet in de EU. Voor niet-EU levering gelden andere regels; raadpleeg je accountant.`
+      );
+    }
+  }
 
   const submitTotalDiscount = (fd: FormData) => {
     startTransition(() => {
@@ -45,6 +93,16 @@ export default function ProjectFinancialOverview({
         }
         setErrors(undefined);
       })();
+    });
+  };
+
+  const toggleVat = (next: boolean) => {
+    setReverseCharge(next);
+    const fd = new FormData();
+    fd.set('projectId', projectId);
+    if (next) fd.set('vatReverseCharge', 'on');
+    startVatTransition(() => {
+      void updateProjectVat(fd);
     });
   };
 
@@ -142,11 +200,20 @@ export default function ProjectFinancialOverview({
             <dd className="text-lg font-semibold tabular-nums">{formatEur(t.grandTotal)}</dd>
           </div>
           <div className="flex justify-between gap-4 text-zinc-600">
-            <dt>BTW ({vat.vatRatePercent}%)</dt>
-            <dd className="tabular-nums">{formatEur(vat.vatAmount)}</dd>
+            <dt>
+              BTW ({vat.vatRatePercent}%)
+              {reverseCharge && (
+                <span className="ml-1 text-zinc-500">· verlegd</span>
+              )}
+            </dt>
+            <dd className="tabular-nums">
+              {reverseCharge ? 'Verlegd' : formatEur(vat.vatAmount)}
+            </dd>
           </div>
           <div className="flex justify-between gap-4 border-t border-zinc-200 pt-2">
-            <dt className="font-semibold text-zinc-900">Totaal incl. BTW</dt>
+            <dt className="font-semibold text-zinc-900">
+              {reverseCharge ? 'Totaal te betalen' : 'Totaal incl. BTW'}
+            </dt>
             <dd className="text-lg font-semibold tabular-nums">{formatEur(vat.totalInclVat)}</dd>
           </div>
         </dl>
@@ -155,6 +222,37 @@ export default function ProjectFinancialOverview({
             Ingehuurd materiaal is je interne kostenpost (catalogusregels met &quot;Extern
             inhuur&quot;). Het staat ook in het materiaaltotaal op de offerte.
           </p>
+        )}
+      </section>
+
+      <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+        <h3 className="mb-2 text-sm font-semibold text-zinc-900">BTW</h3>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={reverseCharge}
+            disabled={vatPending}
+            onChange={(event) => toggleVat(event.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            <span className="font-medium text-zinc-900">
+              BTW verlegd (intracommunautair B2B)
+            </span>
+            <span className="mt-0.5 block text-xs text-zinc-600">
+              Op de offerte wordt € 0,00 BTW berekend en komt de wettelijk verplichte
+              vermelding te staan. Standaardinstelling van de klant is{' '}
+              {client.vatReverseChargeDefault ? 'aan' : 'uit'}.
+            </span>
+            <span className="mt-0.5 block text-xs text-zinc-500">{REVERSE_CHARGE_NOTE_NL}</span>
+          </span>
+        </label>
+        {warnings.length > 0 && (
+          <ul className="mt-3 space-y-1 rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+            {warnings.map((text) => (
+              <li key={text}>• {text}</li>
+            ))}
+          </ul>
         )}
       </section>
 

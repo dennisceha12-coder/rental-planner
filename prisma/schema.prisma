@@ -52,16 +52,20 @@ model CompanySettings {
 }
 
 model Client {
-  id        String     @id @default(cuid())
-  type      ClientType @default(BEDRIJF)
-  name      String
-  email     String?
-  phone     String?
-  address   String?
-  vatNumber String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  projects  Project[]
+  id                      String     @id @default(cuid())
+  type                    ClientType @default(BEDRIJF)
+  name                    String
+  email                   String?
+  phone                   String?
+  address                 String?
+  vatNumber               String?
+  /// ISO-3166-1 alpha-2 country code, used to choose the correct VAT rule.
+  countryCode             String     @default("NL")
+  /// When true, new projects for this client default to the intra-EU B2B reverse charge.
+  vatReverseChargeDefault Boolean    @default(false)
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+  projects                Project[]
 }
 
 model Project {
@@ -90,6 +94,8 @@ model Project {
   transportRatePerKm   Float?
   transportFixedAmount Float?
   totalDiscountAmount Float?
+  /// When true, this project uses the intra-EU B2B reverse charge (VAT shifted to customer).
+  vatReverseCharge     Boolean       @default(false)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   lines        ProjectLine[]

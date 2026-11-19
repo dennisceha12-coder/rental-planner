@@ -29,10 +29,20 @@ export const clientSchema = z
     phone: z.string().optional(),
     address: z.string().optional(),
     vatNumber: z.string().optional(),
+    countryCode: z
+      .string()
+      .optional()
+      .transform((v) => (v && v.trim() !== '' ? v.trim().toUpperCase() : 'NL')),
+    vatReverseChargeDefault: z
+      .union([z.literal('on'), z.literal('true'), z.boolean(), z.null(), z.undefined()])
+      .transform((v) => v === 'on' || v === 'true' || v === true),
   })
   .transform((data) => ({
     ...data,
     vatNumber: data.vatNumber?.trim() ? data.vatNumber.trim() : undefined,
+    // Reverse charge only makes sense for business customers.
+    vatReverseChargeDefault:
+      data.type === 'BEDRIJF' ? data.vatReverseChargeDefault : false,
   }));
 
 export const equipmentCategorySchema = z.object({
@@ -151,6 +161,13 @@ export const projectSchema = z
 export const projectFinancialSchema = z.object({
   projectId: z.string().min(1),
   totalDiscountAmount: optionalNonNegativeNumber,
+});
+
+export const projectVatSchema = z.object({
+  projectId: z.string().min(1),
+  vatReverseCharge: z
+    .union([z.literal('on'), z.literal('true'), z.boolean(), z.null(), z.undefined()])
+    .transform((v) => v === 'on' || v === 'true' || v === true),
 });
 
 export const projectLineDiscountSchema = z

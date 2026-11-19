@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db';
 import ClientForm from '@/components/ClientForm';
 import DeleteClientButton from '@/components/DeleteClientButton';
-import { CLIENT_TYPE_LABELS } from '@/lib/clients';
+import { CLIENT_TYPE_LABELS, countryLabel, isEuCountry } from '@/lib/clients';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,9 +48,18 @@ export default async function ClientsPage() {
                     {c.address && (
                       <p className="mt-0.5 text-sm text-zinc-500">{c.address}</p>
                     )}
-                    {c.vatNumber && (
-                      <p className="mt-0.5 text-sm text-zinc-500">BTW: {c.vatNumber}</p>
-                    )}
+                    <p className="mt-0.5 text-sm text-zinc-500">
+                      {countryLabel(c.countryCode)}
+                      {c.vatNumber && ` · BTW: ${c.vatNumber}`}
+                    </p>
+                    {c.vatReverseChargeDefault &&
+                      c.type === 'BEDRIJF' &&
+                      isEuCountry(c.countryCode) &&
+                      c.countryCode !== 'NL' && (
+                        <p className="mt-0.5 text-xs font-medium text-amber-700">
+                          Standaard BTW verlegd
+                        </p>
+                      )}
                     <p className="mt-1 text-xs text-zinc-400">
                       {c._count.projects} project(en)
                     </p>

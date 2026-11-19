@@ -153,6 +153,13 @@ export default async function ProjectPage({
           costs={projectToCostFields(project)}
           defaultVatRate={company.defaultVatRate}
           staffel={company.rentalStaffelPercents}
+          vatReverseCharge={project.vatReverseCharge}
+          supplierVatNumber={company.vatNumber}
+          client={{
+            countryCode: project.client.countryCode,
+            vatNumber: project.client.vatNumber,
+            vatReverseChargeDefault: project.client.vatReverseChargeDefault,
+          }}
         />
       )}
 

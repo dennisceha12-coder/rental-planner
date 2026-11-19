@@ -27,6 +27,7 @@ import {
   isCompanyConfigured,
   quoteValidUntil,
 } from '@/lib/company-settings';
+import { REVERSE_CHARGE_NOTE_EN, REVERSE_CHARGE_NOTE_NL } from '@/lib/vat';
 import { CLIENT_TYPE_LABELS } from '@/lib/clients';
 
 export const runtime = 'nodejs';
@@ -68,7 +69,8 @@ export async function GET(
   );
   const today = new Date();
   const validUntil = quoteValidUntil(today, company.quoteValidityDays);
-  const vat = computeVatTotals(totals.grandTotal, company.defaultVatRate);
+  const vatMode = project.vatReverseCharge ? 'REVERSE_CHARGE' : 'STANDARD';
+  const vat = computeVatTotals(totals.grandTotal, company.defaultVatRate, vatMode);
 
   const totalRows: QuotePdfData['totals'] = [];
   if (totals.material > 0) {
@@ -96,8 +98,16 @@ export async function GET(
   }
   totalRows.push(
     { label: 'Totaal excl. BTW', value: formatEur(vat.subtotalExclVat), kind: 'subtotal' },
-    { label: `BTW (${company.defaultVatRate}%)`, value: formatEur(vat.vatAmount), kind: 'normal' },
-    { label: 'Totaal incl. BTW', value: formatEur(vat.totalInclVat), kind: 'grand' }
+    {
+      label: vat.reverseCharge ? 'BTW verlegd' : `BTW (${company.defaultVatRate}%)`,
+      value: vat.reverseCharge ? '€ 0,00' : formatEur(vat.vatAmount),
+      kind: 'normal',
+    },
+    {
+      label: vat.reverseCharge ? 'Totaal te betalen' : 'Totaal incl. BTW',
+      value: formatEur(vat.totalInclVat),
+      kind: 'grand',
+    }
   );
 
   const data: QuotePdfData = {
@@ -166,6 +176,9 @@ export async function GET(
       totalLabel: formatEur(row.total),
     })),
     totals: totalRows,
+    reverseCharge: vat.reverseCharge,
+    reverseChargeNoteNl: vat.reverseCharge ? REVERSE_CHARGE_NOTE_NL : null,
+    reverseChargeNoteEn: vat.reverseCharge ? REVERSE_CHARGE_NOTE_EN : null,
   };
 
   const buffer = await renderToBuffer(
